@@ -1,32 +1,30 @@
 import os
 import pandas as pd
-from PIL import Image
+import cv2
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
+from torch.utils.data import Dataset
 
 
-class ProteinDataset(Dataset):
-    def __init__(self, train_root, transforms=None):
-        pd_data = pd.read_csv("train.csv")
-        ids = pd_data["Id"].tolist()
-        raw_labels = pd_data['Target'].tolist()
-        labels = [list(map(int, item.split(' '))) for item in raw_labels]
-        self.data = list(zip(ids, labels))
-        self.train_root = train_root
+class TrainDataset(Dataset):
+    def __init__(self, num_classes, label_file, root_folder, transforms):
+        df_train = pd.read_csv(label_file)
+        self.ids = df_train["Id"].tolist()
+        raw_labels = df_train['Target'].tolist()
+        self.labels = [list(map(int, item.split(' '))) for item in raw_labels]
+        self.num_classes = num_classes
+        self.root_folder = root_folder
         self.transforms = transforms
 
     def __getitem__(self, index):
-        img_names = [self.data[index][0] + "_" + color + ".png" for color in ["blue", "red", "yellow", "green"]]
-        img = [Image.open(os.path.join(self.train_root, img_name)) for img_name in img_names]
-        img = np.stack(img, axis=-1)
-        if self.transforms is not None:
-            img = self.transforms(img)
-        labels = self.data[index][1]
-        return img, np.array(labels)
+        img_names = [self.ids[index] + "_" + color + ".png" for color in ["red", "green", "blue", "yellow"]]
+        R, G, B, Y = (cv2.imread(os.path.join(self.root_folder, img_name), cv2.IMREAD_GRAYSCALE) for img_name in img_names)
+        bgry = np.stack([B, G, R, Y], axis=-1)
+        bgry = self.transforms(bgry)
+        label_vec = torch.zeros(self.num_classes)
+        labels = self.labels[index]
+        label_vec[labels] = 1
+        return bgry, label_vec, index
 
     def __len__(self):
-        return len(self.data)
-
-
+        return len(self.ids)

@@ -1,84 +1,147 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import random
-
-import torch
-import torchvision
-from torchvision.transforms import functional as F
-
-
-class Compose(object):
-    def __init__(self, transforms):
-        self.transforms = transforms
-
-    def __call__(self, image, target):
-        for t in self.transforms:
-            image, target = t(image, target)
-        return image, target
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + "("
-        for t in self.transforms:
-            format_string += "\n"
-            format_string += "    {0}".format(t)
-        format_string += "\n)"
-        return format_string
+import numpy as np
+import cv2
 
 
 class Resize(object):
-    def __init__(self, min_size, max_size):
-        self.min_size = min_size
-        self.max_size = max_size
+    """
+    Resize given image
+    Args:
+        size (H, W)
+    """
+    def __init__(self, size):
+        self.size = size
 
-    # modified from torchvision to add support for max size
-    def get_size(self, image_size):
-        w, h = image_size
-        size = self.min_size
-        max_size = self.max_size
-        if max_size is not None:
-            min_original_size = float(min((w, h)))
-            max_original_size = float(max((w, h)))
-            if max_original_size / min_original_size * size > max_size:
-                size = int(round(max_size * min_original_size / max_original_size))
+    def __call__(self, bgry):
+        """
+        Args:
+            bgry: (H, W, BGRY)
 
-        if (w <= h and w == size) or (h <= w and h == size):
-            return (h, w)
+        Returns:
+            np.array: numpy.ndarray (H, W, BGRY)
+        """
+        height, width, _ = bgry.shape
+        if (height, width) != self.size:
+            bgr_img = bgry[:, :, [0, 1, 2]]
+            y_channel = bgry[:, :, 3]
+            bgr_img = cv2.resize(bgr_img, self.size)
+            y_channel = cv2.resize(y_channel, self.size)
 
-        if w < h:
-            ow = size
-            oh = int(size * h / w)
-        else:
-            oh = size
-            ow = int(size * w / h)
+            y_img = np.expand_dims(y_channel, axis=2)
+            bgry = np.concatenate((bgr_img, y_img), axis=2)
+        return bgry
 
-        return (oh, ow)
-
-    def __call__(self, image, target):
-        size = self.get_size(image.size)
-        image = F.resize(image, size)
-        target = target.resize(image.size)
-        return image, target
+    def __repr__(self):
+        return self.__class__.__name__ + '(size={})'.format(self.size)
 
 
-class RandomHorizontalFlip(object):
-    def __init__(self, prob=0.5):
-        self.prob = prob
+class RandomHVFlip(object):
+    """Horizontally/Vertically flip the given Image
+    randomly with a given probability.
 
-    def __call__(self, image):
-        if random.random() < self.prob:
-            image = F.hflip(image)
-        return image
+    Args:
+        p (float): probability of the image being flipped. Default value is 0.5
+        mode (int): 1 for vertical, 0 for horizontal
+    """
+
+    def __init__(self, mode, p=0.5):
+        self.mode = mode
+        self.p = p
+
+    def __call__(self, bgry):
+        """
+        Args:
+            bgry: (H, W, BGRY)
+
+        Returns:
+            np.array: numpy.ndarray (H, W, BGRY)
+        """
+        if random.random() < self.p:
+            bgr_img = bgry[:, :, [0, 1, 2]]
+            y_channel = bgry[:, :, 3]
+            bgr_img = cv2.flip(bgr_img, self.mode)
+            y_channel = cv2.flip(y_channel, self.mode)
+
+            y_img = np.expand_dims(y_channel, axis=2)
+            bgry = np.concatenate((bgr_img, y_img), axis=2)
+        # assert np_bgry.shape[2] == 4
+        return bgry
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={}, mode={})'.format(self.p, self.mode)
 
 
-class ToTensor(object):
-    def __call__(self, image, target):
-        return F.to_tensor(image), target
+class RandomClockwiseRotate(object):
+    """clockwise/counterclockwise rotate the given Image
+    randomly with a given probability.
+
+        Args:
+            p (float): probability of the image being flipped. Default value is 0.5
+            mode (int): 1 for cw, 0 for ccw
+    """
+    def __init__(self, mode, p=0.5):
+        self.mode = mode
+        self.p = p
+
+    def __call__(self, bgry):
+        """
+        Args:
+            bgry: (H, W, BGRY)
+
+        Returns:
+            np.array: numpy.ndarray (H, W, BGRY)
+        """
+        if random.random() < self.p:
+            bgr_img = bgry[:, :, [0, 1, 2]]
+            y_channel = bgry[:, :, 3]
+            bgr_img = cv2.transpose(bgr_img)
+            bgr_img = cv2.flip(bgr_img, flipCode=self.mode)
+
+            y_channel = cv2.transpose(y_channel)
+            y_channel = cv2.flip(y_channel, flipCode=self.mode)
+
+            y_img = np.expand_dims(y_channel, axis=2)
+            bgry = np.concatenate((bgr_img, y_img), axis=2)
+        # assert np_bgry.shape[2] == 4
+        return bgry
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(p={}, mode={})'.format(self.p, self.mode)
 
 
-class Normalize(object):
-    def __init__(self, mean, std):
-        self.mean = mean
-        self.std = std
+class RandomRotation(object):
+    """
+    Rotate given image
+    Args:
+        degree (start, end)
+    """
+    def __init__(self, degree, is_train=True):
+        self.degree = degree
+        self.is_train = is_train
 
-    def __call__(self, image, target):
-        image = F.normalize(image, mean=self.mean, std=self.std)
-        return image, target
+    def __call__(self, bgry):
+        """
+        Args:
+            bgry: (H, W, BGRY)
+
+        Returns:
+            np.array: numpy.ndarray (H, W, BGRY)
+        """
+        if self.is_train:
+            h, w, _ = bgry.shape
+            center = (int(w / 2), int(h / 2))
+            degree = random.randint(*self.degree)
+            M = cv2.getRotationMatrix2D(center, degree, 1.0)
+
+            bgr_img = bgry[:, :, [0, 1, 2]]
+            y_channel = bgry[:, :, 3]
+            bgr_img = cv2.warpAffine(bgr_img, M, (w, h))
+            y_channel = cv2.warpAffine(y_channel, M, (w, h))
+
+            y_img = np.expand_dims(y_channel, axis=2)
+            bgry = np.concatenate((bgr_img, y_img), axis=2)
+        return bgry
+
+    def __repr__(self):
+        return self.__class__.__name__ + '(degree={}, is_train={})'.format(self.degree, self.is_train)
