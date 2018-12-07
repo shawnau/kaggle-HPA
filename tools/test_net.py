@@ -4,7 +4,6 @@ import torch
 
 from dl_backbone.config import cfg
 from dl_backbone.data import make_data_loader
-from dl_backbone.data.dataset.mertices import evaluation
 from dl_backbone.engine.inference import inference
 from dl_backbone.model.network import NetWrapper
 from dl_backbone.utils.checkpoint import DetectronCheckpointer
@@ -70,7 +69,6 @@ def main():
         output_folder=output_folder
     )
     synchronize()
-    evaluation(cfg.DATASETS.TEST_LABEL, os.path.join(output_folder, "predictions.pth"))
 
 
 if __name__ == "__main__":

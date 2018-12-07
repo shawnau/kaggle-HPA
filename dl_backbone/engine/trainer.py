@@ -2,9 +2,11 @@
 import datetime
 import logging
 import time
+from tqdm import tqdm
 
 import torch
 from torch.distributed import deprecated as dist
+import torch.nn.functional as F
 
 from dl_backbone.utils.comm import get_world_size
 from dl_backbone.utils.metric_logger import MetricLogger
@@ -37,7 +39,8 @@ def reduce_loss_dict(loss_dict):
 
 def do_train(
     model,
-    data_loader,
+    train_data_loader,
+    valid_data_loader,
     optimizer,
     scheduler,
     checkpointer,
@@ -48,12 +51,12 @@ def do_train(
     logger = logging.getLogger("dl_backbone.trainer")
     logger.info("Start training")
     meters = MetricLogger(delimiter="  ")
-    max_iter = len(data_loader)
+    max_iter = len(train_data_loader)
     start_iter = arguments["iteration"]
     model.train()
     start_training_time = time.time()
     end = time.time()
-    for iteration, (images, targets, _) in enumerate(data_loader, start_iter):
+    for iteration, (images, targets, _) in enumerate(train_data_loader, start_iter):
         data_time = time.time() - end
         arguments["iteration"] = iteration
 
@@ -71,7 +74,7 @@ def do_train(
 
         # reduce losses over all GPUs for logging purposes
         loss_dict_reduced = reduce_loss_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        losses_reduced = sum(loss for loss in loss_dict_reduced.values()) / float(torch.cuda.device_count())
         meters.update(loss=losses_reduced, **loss_dict_reduced)
 
         optimizer.zero_grad()
@@ -85,12 +88,14 @@ def do_train(
         eta_seconds = meters.time.global_avg * (max_iter - iteration)
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
-        if iteration % 20 == 0 or iteration == (max_iter - 1):
+        if iteration % 100 == 0 or iteration == (max_iter - 1):
+            valid_loss = do_valid(model, valid_data_loader)
             logger.info(
                 meters.delimiter.join(
                     [
                         "eta: {eta}",
                         "iter: {iter}",
+                        "valid: {valid:.4f}",
                         "{meters}",
                         "lr: {lr:.6f}",
                         "max mem: {memory:.0f}",
@@ -98,6 +103,7 @@ def do_train(
                 ).format(
                     eta=eta_string,
                     iter=iteration,
+                    valid=valid_loss,
                     meters=str(meters),
                     lr=optimizer.param_groups[0]["lr"],
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
@@ -114,3 +120,16 @@ def do_train(
             total_time_str, total_training_time / (max_iter)
         )
     )
+
+
+def do_valid(model, valid_data_loader):
+    model.eval()
+    mean_acc, mean_loss, batches = 0, 0, 0
+    for i, batch in tqdm(enumerate(valid_data_loader)):
+        images, targets, image_ids = batch
+        with torch.no_grad():
+            logits = model(images.tensors)
+            mean_loss += F.binary_cross_entropy_with_logits(logits.cuda(), targets.cuda())
+            batches += 1
+    model.train()
+    return mean_loss.item() / float(batches)

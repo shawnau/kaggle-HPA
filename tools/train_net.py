@@ -6,7 +6,6 @@ import torch
 
 from dl_backbone.config import cfg
 from dl_backbone.data import make_data_loader
-from dl_backbone.data.dataset.mertices import evaluation
 from dl_backbone.solver import make_lr_scheduler
 from dl_backbone.solver import make_optimizer
 from dl_backbone.model.network import NetWrapper
@@ -47,9 +46,16 @@ def train(cfg, local_rank, distributed):
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
 
-    data_loader = make_data_loader(
+    train_data_loader = make_data_loader(
         cfg,
         is_train=True,
+        is_distributed=distributed,
+        start_iter=arguments["iteration"],
+    )
+
+    valid_data_loader = make_data_loader(
+        cfg,
+        is_train=False,
         is_distributed=distributed,
         start_iter=arguments["iteration"],
     )
@@ -58,7 +64,8 @@ def train(cfg, local_rank, distributed):
 
     do_train(
         model,
-        data_loader,
+        train_data_loader,
+        valid_data_loader,
         optimizer,
         scheduler,
         checkpointer,
@@ -86,7 +93,6 @@ def validation(cfg, model, distributed):
         output_folder=output_folder,
     )
     synchronize()
-    evaluation(cfg.DATASETS.TEST_LABEL, os.path.join(output_folder, "predictions.pth"))
 
 
 def main():
