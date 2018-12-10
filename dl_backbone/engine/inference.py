@@ -16,7 +16,7 @@ def compute_on_dataset(model, data_loader, device):
     cpu_device = torch.device("cpu")
     for i, batch in tqdm(enumerate(data_loader)):
         images, targets, image_ids = batch
-        images = images.tensors.to(device)
+        images = images.to(device)
         with torch.no_grad():
             output = model(images)
             output = [o.to(cpu_device) for o in output]

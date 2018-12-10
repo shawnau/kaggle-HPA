@@ -8,6 +8,7 @@ import torch
 from torch.distributed import deprecated as dist
 import torch.nn.functional as F
 
+from dl_backbone.data.dataset.mertices import macro_f1
 from dl_backbone.utils.comm import get_world_size
 from dl_backbone.utils.metric_logger import MetricLogger
 
@@ -39,14 +40,15 @@ def reduce_loss_dict(loss_dict):
 
 def do_train(
     model,
+    loss_module,
     train_data_loader,
-    valid_data_loader,
     optimizer,
-    scheduler,
     checkpointer,
     device,
     checkpoint_period,
     arguments,
+    scheduler=None,
+    valid_data_loader=None
 ):
     logger = logging.getLogger("dl_backbone.trainer")
     logger.info("Start training")
@@ -59,23 +61,22 @@ def do_train(
     for iteration, (images, targets, _) in enumerate(train_data_loader, start_iter):
         data_time = time.time() - end
         arguments["iteration"] = iteration
+        if scheduler is not None:
+            scheduler.step()
 
-        scheduler.step()
-
-        images = images.tensors.to(device)
+        images = images.to(device)
         targets = targets.to(device)
 
-        loss_dict = model(images, targets)
+        logits, aux_logits = model(images)
+        loss_dict = {"aux loss": loss_module(aux_logits, targets),
+                     "loss": loss_module(logits, targets)}
         # using nn.DataParallel will merge loss into one tensor
-        for k in loss_dict.keys():
-            loss_dict[k] = loss_dict[k].sum()
-
         losses = sum(loss for loss in loss_dict.values())
 
         # reduce losses over all GPUs for logging purposes
-        loss_dict_reduced = reduce_loss_dict(loss_dict)
-        losses_reduced = sum(loss for loss in loss_dict_reduced.values()) / float(torch.cuda.device_count())
-        meters.update(loss=losses_reduced, **loss_dict_reduced)
+        # loss_dict_reduced = reduce_loss_dict(loss_dict)
+        # losses_reduced = sum(loss for loss in loss_dict_reduced.values())
+        meters.update(**loss_dict)
 
         optimizer.zero_grad()
         losses.backward()
@@ -89,13 +90,15 @@ def do_train(
         eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
 
         if iteration % 100 == 0 or iteration == (max_iter - 1):
-            valid_loss = do_valid(model, valid_data_loader)
+            if valid_data_loader is not None:
+                valid_loss, valid_f1 = do_valid(model, valid_data_loader)
+            else:
+                valid_loss, valid_f1 = 0.0, 0.0
             logger.info(
                 meters.delimiter.join(
                     [
                         "eta: {eta}",
                         "iter: {iter}",
-                        "valid: {valid:.4f}",
                         "{meters}",
                         "lr: {lr:.6f}",
                         "max mem: {memory:.0f}",
@@ -103,7 +106,6 @@ def do_train(
                 ).format(
                     eta=eta_string,
                     iter=iteration,
-                    valid=valid_loss,
                     meters=str(meters),
                     lr=optimizer.param_groups[0]["lr"],
                     memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
@@ -124,12 +126,15 @@ def do_train(
 
 def do_valid(model, valid_data_loader):
     model.eval()
-    mean_acc, mean_loss, batches = 0, 0, 0
-    for i, batch in tqdm(enumerate(valid_data_loader)):
-        images, targets, image_ids = batch
-        with torch.no_grad():
-            logits = model(images.tensors)
-            mean_loss += F.binary_cross_entropy_with_logits(logits.cuda(), targets.cuda())
-            batches += 1
+    with torch.no_grad():
+        all_logits, all_targets = [], []
+        for i, batch in tqdm(enumerate(valid_data_loader)):
+            images, targets, image_ids = batch
+            all_logits.append(model(images))
+            all_targets.append(targets)
+        all_logits  = torch.cat(all_logits, dim=0)
+        all_targets = torch.cat(all_targets, dim=0)
+        bce_loss = F.binary_cross_entropy_with_logits(all_logits.cuda(), all_targets.cuda()).item()
+        f1 = macro_f1(all_logits.cuda(), all_targets.cuda())
     model.train()
-    return mean_loss.item() / float(batches)
+    return bce_loss, f1

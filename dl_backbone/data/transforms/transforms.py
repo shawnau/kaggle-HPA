@@ -1,7 +1,7 @@
-# Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
-import random
+import random, math
 import numpy as np
 import cv2
+import torch.nn.functional as F
 
 
 class Resize(object):

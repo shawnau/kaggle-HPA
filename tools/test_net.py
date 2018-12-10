@@ -1,3 +1,6 @@
+import sys
+sys.path.append('../')
+
 import os
 import argparse
 import torch
@@ -12,7 +15,7 @@ from dl_backbone.utils.comm import synchronize, get_rank
 from dl_backbone.utils.logger import setup_logger
 
 
-def main():
+def main(mode):
     parser = argparse.ArgumentParser(description="Pytorch Inference")
     parser.add_argument(
         "--config-file",
@@ -57,10 +60,18 @@ def main():
     checkpointer = DetectronCheckpointer(cfg, model)
     _ = checkpointer.load(cfg.MODEL.WEIGHT)
 
-    dataset_name = cfg.DATASETS.TEST
-    output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
-    os.makedirs(output_folder, exist_ok=True)
-    data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
+    if mode == "valid":
+        dataset_name = cfg.DATASETS.VALID
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+        os.makedirs(output_folder, exist_ok=True)
+        data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
+    elif mode == "test":
+        dataset_name = cfg.DATASETS.TEST
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+        os.makedirs(output_folder, exist_ok=True)
+        data_loader_val = make_data_loader(cfg, is_train=False, is_test=True, is_distributed=distributed)
+    else:
+        raise KeyError("mode not recognized")
 
     inference(
         model,
@@ -72,4 +83,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main("test")

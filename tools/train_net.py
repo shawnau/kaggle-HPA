@@ -9,6 +9,7 @@ from dl_backbone.data import make_data_loader
 from dl_backbone.solver import make_lr_scheduler
 from dl_backbone.solver import make_optimizer
 from dl_backbone.model.network import NetWrapper
+from dl_backbone.model.loss import FocalLoss
 from dl_backbone.engine.trainer import do_train
 from dl_backbone.engine.inference import inference
 from dl_backbone.utils.checkpoint import DetectronCheckpointer
@@ -19,6 +20,7 @@ from dl_backbone.utils.logger import setup_logger
 
 def train(cfg, local_rank, distributed):
     model = NetWrapper(cfg)
+    loss_module = torch.nn.BCEWithLogitsLoss().cuda()
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
 
@@ -64,14 +66,15 @@ def train(cfg, local_rank, distributed):
 
     do_train(
         model,
+        loss_module,
         train_data_loader,
-        valid_data_loader,
         optimizer,
-        scheduler,
         checkpointer,
         device,
         checkpoint_period,
         arguments,
+        scheduler=scheduler,
+        valid_data_loader=None
     )
 
     return model
@@ -82,7 +85,7 @@ def validation(cfg, model, distributed):
         model = model.module
     torch.cuda.empty_cache()  # TODO check if it helps
 
-    dataset_name = cfg.DATASETS.TEST
+    dataset_name = cfg.DATASETS.VALID
     output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
     os.makedirs(output_folder, exist_ok=True)
     data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
