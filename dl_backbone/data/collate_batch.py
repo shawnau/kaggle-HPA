@@ -9,8 +9,8 @@ class BatchCollator(object):
     This should be passed to the DataLoader
     """
 
-    def __init__(self, size_divisible=0):
-        self.size_divisible = size_divisible
+    def __init__(self, ):
+        pass
 
     def __call__(self, batch):
         transposed_batch = list(zip(*batch))

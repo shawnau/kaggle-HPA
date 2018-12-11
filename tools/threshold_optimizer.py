@@ -41,20 +41,20 @@ class MacroF1(nn.Module):
         return -score.mean()
 
 
-def optimize_th(init_number, train_pth, valid_pth):
+def optimize_th(train_pth, valid_pth, init_number=0.5, lr=0.05, max_iter=10):
     print("loading data...")
     train_x, train_y = load_data(cfg.DATASETS.TRAIN_LABEL, train_pth)
     valid_x, valid_y = load_data(cfg.DATASETS.VALID_LABEL, valid_pth)
     print("Done!")
     model = MacroF1(init_number, cfg.MODEL.NUM_CLASS)
-    optimizer = optim.LBFGS(model.parameters(), lr=0.05, max_iter=10)
+    optimizer = optim.LBFGS(model.parameters(), lr=lr, max_iter=max_iter)
 
     def closure():
         optimizer.zero_grad()
         train_loss = model(train_x, train_y)
         with torch.no_grad():
-            test_loss = model(valid_x, valid_y)
-            print('train loss: %.6f test loss: %.6f' % (train_loss.item(), test_loss.item()))
+            valid_loss = model(valid_x, valid_y)
+            print('train loss: %.6f valid loss: %.6f' % (train_loss.item(), valid_loss.item()))
         train_loss.backward()
         return train_loss
 

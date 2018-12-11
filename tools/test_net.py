@@ -11,11 +11,14 @@ from dl_backbone.engine.inference import inference
 from dl_backbone.model.network import NetWrapper
 from dl_backbone.utils.checkpoint import DetectronCheckpointer
 from dl_backbone.utils.collect_env import collect_env_info
-from dl_backbone.utils.comm import synchronize, get_rank
 from dl_backbone.utils.logger import setup_logger
 
 
-def main(mode):
+def main():
+    """
+    :param mode: ["train valid test"]
+    :return:
+    """
     parser = argparse.ArgumentParser(description="Pytorch Inference")
     parser.add_argument(
         "--config-file",
@@ -23,32 +26,20 @@ def main(mode):
         metavar="FILE",
         help="path to config file",
     )
-    parser.add_argument("--local_rank", type=int, default=0)
+
     parser.add_argument(
-        "opts",
-        help="Modify config options using the command-line",
-        default=None,
-        nargs=argparse.REMAINDER,
+        "--mode",
+        default="valid",
+        help="train, valid or test",
     )
 
     args = parser.parse_args()
-
-    num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
-    distributed = num_gpus > 1
-
-    if distributed:
-        torch.cuda.set_device(args.local_rank)
-        torch.distributed.deprecated.init_process_group(
-            backend="nccl", init_method="env://"
-        )
-
-    # cfg.merge_from_file(args.config_file)
-    # cfg.merge_from_list(args.opts)
+    cfg.merge_from_file(args.config_file)
     cfg.freeze()
 
     save_dir = ""
-    logger = setup_logger("dl_backbone", save_dir, get_rank())
-    logger.info("Using {} GPUs".format(num_gpus))
+    logger = setup_logger("model", save_dir)
+    logger.info("Using {} GPUs".format(torch.cuda.device_count()))
     logger.info(cfg)
 
     logger.info("Collecting env info (might take some time)")
@@ -57,30 +48,31 @@ def main(mode):
     model = NetWrapper(cfg)
     model.to(cfg.MODEL.DEVICE)
 
-    checkpointer = DetectronCheckpointer(cfg, model)
+    checkpointer = DetectronCheckpointer(cfg, model, logger=logger)
     _ = checkpointer.load(cfg.MODEL.WEIGHT)
 
-    if mode == "valid":
-        dataset_name = cfg.DATASETS.VALID
-        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+    if args.mode == "train":
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN)
         os.makedirs(output_folder, exist_ok=True)
-        data_loader_val = make_data_loader(cfg, is_train=False, is_distributed=distributed)
-    elif mode == "test":
-        dataset_name = cfg.DATASETS.TEST
-        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
+        data_loader_test = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=False)
+    elif args.mode == "valid":
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID)
         os.makedirs(output_folder, exist_ok=True)
-        data_loader_val = make_data_loader(cfg, is_train=False, is_test=True, is_distributed=distributed)
+        data_loader_test = make_data_loader(cfg, cfg.DATASETS.VALID, is_train=False)
+    elif args.mode == "test":
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TEST)
+        os.makedirs(output_folder, exist_ok=True)
+        data_loader_test = make_data_loader(cfg, cfg.DATASETS.TEST, is_train=False)
     else:
         raise KeyError("mode not recognized")
 
     inference(
         model,
-        data_loader_val,
+        data_loader_test,
         device=cfg.MODEL.DEVICE,
         output_folder=output_folder
     )
-    synchronize()
 
 
 if __name__ == "__main__":
-    main("test")
+    main()

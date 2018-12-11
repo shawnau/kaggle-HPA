@@ -57,12 +57,8 @@ def inference(
 
     # convert to a torch.device for efficiency
     device = torch.device(device)
-    num_devices = (
-        torch.distributed.deprecated.get_world_size()
-        if torch.distributed.deprecated.is_initialized()
-        else 1
-    )
-    logger = logging.getLogger("dl_backbone.inference")
+    num_devices = 1
+    logger = logging.getLogger("model.inference")
     dataset = data_loader.dataset
     logger.info("Start evaluation on {} images".format(len(dataset)))
     start_time = time.time()
@@ -72,8 +68,8 @@ def inference(
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=total_time))
     logger.info(
-        "Total inference time: {} ({} s / img per device, on {} devices)".format(
-            total_time_str, total_time * num_devices / len(dataset), num_devices
+        "Total inference time: {} ({} s / img per device)".format(
+            total_time_str, total_time * num_devices / len(dataset)
         )
     )
 

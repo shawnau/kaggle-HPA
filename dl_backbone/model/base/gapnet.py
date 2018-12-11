@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 
 class GapNetPL(nn.Module):
-    def __init__(self, num_class):
+    def __init__(self, num_classes):
         super(GapNetPL, self).__init__()
         self.conv1 = nn.Conv2d(4, 32, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(32)
@@ -29,7 +29,7 @@ class GapNetPL(nn.Module):
 
         self.fc1 = nn.Linear(224, 256)
         self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, num_class)
+        self.fc3 = nn.Linear(256, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):

@@ -1,4 +1,4 @@
-from .densenet import DenseNet
-from .inception import Inception3
-from .resnet import resnet50
+from .densenet import densenet121_protein
+from .resnet import ResNet50Protein
 from .gapnet import GapNetPL
+from .bninception import bninception_protein

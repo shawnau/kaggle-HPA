@@ -6,7 +6,7 @@ from dl_backbone.config import cfg
 def test_train_loader():
     cfg.SOLVER.IMS_PER_BATCH = 10
     from dl_backbone.data.build import make_data_loader
-    data_loader = make_data_loader(cfg, is_train=False)
+    data_loader = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=False)
     for iteration, (images, targets, indices) in enumerate(data_loader):
         print("Image Batch Size: ", images.size())
         print("Target Batch Size: ", targets.size())
@@ -20,7 +20,7 @@ def test_train_loader():
 def test_test_loader():
     cfg.TEST.IMS_PER_BATCH = 10
     from dl_backbone.data.build import make_data_loader
-    data_loader = make_data_loader(cfg, is_train=False)
+    data_loader = make_data_loader(cfg, cfg.DATASETS.TEST, is_train=False)
     for iteration, (images, targets, indices) in enumerate(data_loader):
         print("Image Batch Size: ", images.size())
         print("Target Batch Size: ", targets.size())
@@ -55,4 +55,4 @@ def test_lr_scheduler():
 if __name__ == "__main__":
     test_train_loader()
     test_test_loader()
-    test_lr_scheduler()
+    #test_lr_scheduler()

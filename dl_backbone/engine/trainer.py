@@ -5,37 +5,10 @@ import time
 from tqdm import tqdm
 
 import torch
-from torch.distributed import deprecated as dist
 import torch.nn.functional as F
 
 from dl_backbone.data.dataset.mertices import macro_f1
-from dl_backbone.utils.comm import get_world_size
 from dl_backbone.utils.metric_logger import MetricLogger
-
-
-def reduce_loss_dict(loss_dict):
-    """
-    Reduce the loss dictionary from all processes so that process with rank
-    0 has the averaged results. Returns a dict with the same fields as
-    loss_dict, after reduction.
-    """
-    world_size = get_world_size()
-    if world_size < 2:
-        return loss_dict
-    with torch.no_grad():
-        loss_names = []
-        all_losses = []
-        for k, v in loss_dict.items():
-            loss_names.append(k)
-            all_losses.append(v)
-        all_losses = torch.stack(all_losses, dim=0)
-        dist.reduce(all_losses, dst=0)
-        if dist.get_rank() == 0:
-            # only main process gets accumulated, so only divide by
-            # world_size in this case
-            all_losses /= world_size
-        reduced_losses = {k: v for k, v in zip(loss_names, all_losses)}
-    return reduced_losses
 
 
 def do_train(
@@ -50,7 +23,7 @@ def do_train(
     scheduler=None,
     valid_data_loader=None
 ):
-    logger = logging.getLogger("dl_backbone.trainer")
+    logger = logging.getLogger("model.trainer")
     logger.info("Start training")
     meters = MetricLogger(delimiter="  ")
     max_iter = len(train_data_loader)
@@ -67,19 +40,13 @@ def do_train(
         images = images.to(device)
         targets = targets.to(device)
 
-        logits, aux_logits = model(images)
-        loss_dict = {"aux loss": loss_module(aux_logits, targets),
-                     "loss": loss_module(logits, targets)}
-        # using nn.DataParallel will merge loss into one tensor
-        losses = sum(loss for loss in loss_dict.values())
+        logits = model(images)
+        loss = loss_module(logits, targets)
 
-        # reduce losses over all GPUs for logging purposes
-        # loss_dict_reduced = reduce_loss_dict(loss_dict)
-        # losses_reduced = sum(loss for loss in loss_dict_reduced.values())
-        meters.update(**loss_dict)
+        meters.update(**{str(loss_module): loss})
 
         optimizer.zero_grad()
-        losses.backward()
+        loss.backward()
         optimizer.step()
 
         batch_time = time.time() - end
@@ -91,24 +58,20 @@ def do_train(
 
         if iteration % 100 == 0 or iteration == (max_iter - 1):
             if valid_data_loader is not None:
-                valid_loss, valid_f1 = do_valid(model, valid_data_loader)
-            else:
-                valid_loss, valid_f1 = 0.0, 0.0
+                meters.update(**do_valid(model, valid_data_loader))
             logger.info(
                 meters.delimiter.join(
                     [
                         "eta: {eta}",
                         "iter: {iter}",
                         "{meters}",
-                        "lr: {lr:.6f}",
-                        "max mem: {memory:.0f}",
+                        "lr: {lr:.6f}"
                     ]
                 ).format(
                     eta=eta_string,
                     iter=iteration,
                     meters=str(meters),
-                    lr=optimizer.param_groups[0]["lr"],
-                    memory=torch.cuda.max_memory_allocated() / 1024.0 / 1024.0,
+                    lr=optimizer.param_groups[0]["lr"]
                 )
             )
         if iteration % checkpoint_period == 0 and iteration > 0:
@@ -134,7 +97,7 @@ def do_valid(model, valid_data_loader):
             all_targets.append(targets)
         all_logits  = torch.cat(all_logits, dim=0)
         all_targets = torch.cat(all_targets, dim=0)
-        bce_loss = F.binary_cross_entropy_with_logits(all_logits.cuda(), all_targets.cuda()).item()
+        bce_loss = F.binary_cross_entropy_with_logits(all_logits.cuda(), all_targets.cuda())
         f1 = macro_f1(all_logits.cuda(), all_targets.cuda())
     model.train()
-    return bce_loss, f1
+    return {"bce_loss": bce_loss, "f1": f1}

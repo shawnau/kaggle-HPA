@@ -16,17 +16,24 @@ def make_optimizer(cfg, model):
             weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
         params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
 
-    optimizer = torch.optim.SGD(params, lr, momentum=cfg.SOLVER.MOMENTUM)
-    # optimizer = torch.optim.Adam(params, lr)
+    if cfg.SOLVER.METHOD == "SGD":
+        optimizer = torch.optim.SGD(params, lr, momentum=cfg.SOLVER.MOMENTUM)
+    elif cfg.SOLVER.METHOD == "ADAM":
+        optimizer = torch.optim.Adam(cfg.SOLVER.BASE_LR)
+    else:
+        raise KeyError("Solver not recognized")
     return optimizer
 
 
 def make_lr_scheduler(cfg, optimizer):
-    return WarmupMultiStepLR(
-        optimizer,
-        cfg.SOLVER.STEPS,
-        cfg.SOLVER.GAMMA,
-        warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
-        warmup_iters=cfg.SOLVER.WARMUP_ITERS,
-        warmup_method=cfg.SOLVER.WARMUP_METHOD,
-    )
+    if cfg.SOLVER.METHOD == "SGD":
+        return WarmupMultiStepLR(
+            optimizer,
+            cfg.SOLVER.STEPS,
+            cfg.SOLVER.GAMMA,
+            warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+            warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+            warmup_method=cfg.SOLVER.WARMUP_METHOD,
+        )
+    elif cfg.SOLVER.METHOD == "ADAM":
+        return None

@@ -28,7 +28,7 @@ _C.DATASETS = CN()
 
 _C.DATASETS.TRAIN = "train"
 _C.DATASETS.TRAIN_ROOT = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/train"
-_C.DATASETS.TRAIN_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/train.csv"
+_C.DATASETS.TRAIN_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/train_split.csv"
 
 _C.DATASETS.VALID = "valid"
 _C.DATASETS.VALID_ROOT = _C.DATASETS.TRAIN_ROOT
@@ -52,6 +52,7 @@ _C.DATALOADER.SIZE_DIVISIBILITY = 0
 # Model config
 # ---------------------------------------------------------------------------- #
 _C.MODEL = CN()
+_C.MODEL.NAME = "resnet"
 _C.MODEL.NUM_CLASS = 28
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.WEIGHT = ""
@@ -60,6 +61,7 @@ _C.MODEL.WEIGHT = ""
 # Solver
 # ---------------------------------------------------------------------------- #
 _C.SOLVER = CN()
+_C.SOLVER.METHOD = "SGD"  # SGD or ADAM
 _C.SOLVER.MAX_ITER = 40000
 
 _C.SOLVER.BASE_LR = 0.03
@@ -94,7 +96,7 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
-_C.TEST.IMS_PER_BATCH = 16
+_C.TEST.IMS_PER_BATCH = 32
 
 # ---------------------------------------------------------------------------- #
 # Misc options

@@ -6,12 +6,12 @@ import torch
 from torch.utils.data import Dataset
 
 
-class TrainDataset(Dataset):
-    def __init__(self, num_classes, label_file, root_folder, transforms, is_test=False):
+class ProteinDataset(Dataset):
+    def __init__(self, num_classes, label_file, root_folder, transforms, is_train):
         df_train = pd.read_csv(label_file)
         self.ids = df_train["Id"].tolist()
-        self.is_test = is_test
-        if not is_test:
+        self.is_train = is_train
+        if is_train:
             raw_labels = df_train['Target'].tolist()
             self.labels = [list(map(int, item.split(' '))) for item in raw_labels]
         self.num_classes = num_classes
@@ -28,7 +28,7 @@ class TrainDataset(Dataset):
             print("error on %s : "%self.ids[index], rgby.shape)
             raise
         label_vec = torch.zeros(self.num_classes)
-        if not self.is_test:
+        if self.is_train:
             labels = self.labels[index]
             label_vec[labels] = 1
         return rgby, label_vec, index

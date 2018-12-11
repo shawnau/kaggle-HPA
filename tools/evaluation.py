@@ -2,15 +2,12 @@ import sys
 sys.path.append('../')
 
 import os
-import cv2
 import torch
 import torch.nn.functional as F
-from tqdm import tqdm
-import numpy as np
 import pandas as pd
 from dl_backbone.config import cfg
 from dl_backbone.data.dataset.mertices import p_r, macro_f1
-from threshold_optimizer import optimize_th
+from .threshold_optimizer import optimize_th
 
 
 def calc_statistics():
@@ -31,11 +28,13 @@ def calc_statistics():
         print("iter %d running std : " % iteration, running_std)
 
 
-def submit(sample_csv, eval_file, thresholds):
-    print("loading data...")
-    df_test = pd.read_csv(sample_csv)
+def submit(cfg, thresholds):
+    test_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TEST, "predictions.pth")
+    print("loading %s"%test_pth)
+
+    df_test = pd.read_csv(cfg.DATASETS.TEST_LABEL)
     id_list = df_test["Id"].tolist()
-    result = torch.load(eval_file)
+    result = torch.load(test_pth)
     logits = torch.stack(result, dim=0)
     preds = (logits.sigmoid() > thresholds).int()
     label_list = []
@@ -50,7 +49,20 @@ def submit(sample_csv, eval_file, thresholds):
         labels = list(map(str, labels))
         label_list.append(" ".join(labels))
     submit_df = pd.DataFrame({'Id': id_list, 'Predicted': label_list})
-    submit_df.to_csv("submit.csv", header=True, index=False)
+    if isinstance(thresholds, float):
+        submit_df.to_csv(
+            os.path.join(cfg.OUTPUT_DIR,
+                         "inference",
+                         cfg.DATASETS.TEST,
+                         "%s_%.2f.csv"%(cfg.MODEL.NAME, thresholds)),
+            header=True, index=False)
+    else:
+        submit_df.to_csv(
+            os.path.join(cfg.OUTPUT_DIR,
+                         "inference",
+                         cfg.DATASETS.TEST,
+                         "%s_optim.csv" % cfg.MODEL.NAME),
+            header=True, index=False)
 
 
 def evaluation(label_file, eval_file, thresholds, optim_th=None):
@@ -72,7 +84,7 @@ def evaluation(label_file, eval_file, thresholds, optim_th=None):
     for threshold in thresholds:
         _mf1 = macro_f1(logits, target_tensor, th=threshold)
         p, r = p_r(logits, target_tensor, th=threshold)
-        print("@%.2f precision: %.4f | recall: %.4f | macro f1: %.4f " % (threshold, p, r, _mf1))
+        print("@%.4f precision: %.4f | recall: %.4f | macro f1: %.4f " % (threshold, p, r, _mf1))
     print("bce loss: %.4f" % F.binary_cross_entropy_with_logits(logits, target_tensor).item())
 
     if optim_th is not None:
@@ -81,19 +93,30 @@ def evaluation(label_file, eval_file, thresholds, optim_th=None):
         print("optim precision: %.4f | recall: %.4f | macro f1: %.4f " % (p, r, _mf1))
 
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Pytorch Inference")
+    parser.add_argument(
+        "--config-file",
+        default="",
+        metavar="FILE",
+        help="path to config file",
+    )
+    args = parser.parse_args()
+    cfg.merge_from_file(args.config_file)
+    cfg.freeze()
+
+    train_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN, "predictions.pth")
+    valid_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID, "predictions.pth")
+    optim_th = optimize_th(train_pth, valid_pth, init_number=0.25, lr=0.01, max_iter=20)
+    evaluation(cfg.DATASETS.VALID_LABEL, valid_pth,
+               thresholds=[0.05 * x for x in list(range(10))],
+               optim_th=optim_th)
+
+    submit(cfg, 0.25)
+    submit(cfg, optim_th)
+    # calc_statistics()
+
+
 if __name__ == "__main__":
-    # train_name = cfg.DATASETS.TRAIN
-    # valid_name = cfg.DATASETS.VALID
-    # test_name = cfg.DATASETS.TEST
-
-    #train_pth = os.path.join(cfg.OUTPUT_DIR, "inference", train_name, "predictions.pth")
-    #valid_pth = os.path.join(cfg.OUTPUT_DIR, "inference", valid_name, "predictions.pth")
-    #test_pth = os.path.join(cfg.OUTPUT_DIR, "inference", test_name, "predictions.pth")
-    #optim_th = optimize_th(0.3, train_pth, valid_pth)
-
-    #evaluation(cfg.DATASETS.VALID_LABEL, valid_pth,
-    #           thresholds=[0.05 * x for x in range(11)],
-    #           optim_th=None)
-
-    #submit(cfg.DATASETS.TEST_LABEL, test_pth, optim_th)
-    calc_statistics()
+    main()
