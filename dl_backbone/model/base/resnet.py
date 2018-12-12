@@ -3,9 +3,9 @@ from torch import nn
 from torchvision.models.resnet import ResNet, Bottleneck, model_zoo, model_urls
 
 
-class ResNet50Protein(ResNet):
+class _ResNet50Protein(ResNet):
     def __init__(self, num_classes):
-        super(ResNet50Protein, self).__init__(Bottleneck, [3, 4, 6, 3])
+        super(_ResNet50Protein, self).__init__(Bottleneck, [3, 4, 6, 3])
         self.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
         self.conv1_y = nn.Conv2d(1, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
         self.avgpool = nn.AdaptiveAvgPool2d(1)
@@ -31,6 +31,15 @@ class ResNet50Protein(ResNet):
         x = self.fc(x)
 
         return x
+
+
+class ResNet50Protein(ResNet):
+    def __init__(self, num_classes):
+        super(ResNet50Protein, self).__init__(Bottleneck, [3, 4, 6, 3])
+        self.load_state_dict(model_zoo.load_url(model_urls['resnet50']))
+        self.conv1 = nn.Conv2d(4, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3))
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(512 * Bottleneck.expansion, num_classes)
 
 
 def test():

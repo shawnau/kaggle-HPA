@@ -21,17 +21,16 @@ class ProteinDataset(Dataset):
     def __getitem__(self, index):
         img_names = [self.ids[index] + "_" + color + ".png" for color in ["red", "green", "blue", "yellow"]]
         R, G, B, Y = (cv2.imread(os.path.join(self.root_folder, img_name), cv2.IMREAD_GRAYSCALE) for img_name in img_names)
-        rgby = np.stack([R, G, B, Y], axis=-1)
         try:
+            rgby = np.stack([R, G, B, Y], axis=-1)
             rgby = self.transforms(rgby)
+            label_vec = torch.zeros(self.num_classes)
+            if self.is_train:
+                labels = self.labels[index]
+                label_vec[labels] = 1
+            return rgby, label_vec, index
         except ValueError:
-            print("error on %s : "%self.ids[index], rgby.shape)
-            raise
-        label_vec = torch.zeros(self.num_classes)
-        if self.is_train:
-            labels = self.labels[index]
-            label_vec[labels] = 1
-        return rgby, label_vec, index
+            print("error on %s" % self.ids[index])
 
     def __len__(self):
         return len(self.ids)

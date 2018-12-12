@@ -27,12 +27,6 @@ def main():
         help="path to config file",
     )
 
-    parser.add_argument(
-        "--mode",
-        default="valid",
-        help="train, valid or test",
-    )
-
     args = parser.parse_args()
     cfg.merge_from_file(args.config_file)
     cfg.freeze()
@@ -51,27 +45,17 @@ def main():
     checkpointer = DetectronCheckpointer(cfg, model, logger=logger)
     _ = checkpointer.load(cfg.MODEL.WEIGHT)
 
-    if args.mode == "train":
-        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN)
+    for dataset_name in [cfg.DATASETS.TRAIN, cfg.DATASETS.VALID, cfg.DATASETS.TEST]:
+        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)
         os.makedirs(output_folder, exist_ok=True)
-        data_loader_test = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=False)
-    elif args.mode == "valid":
-        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID)
-        os.makedirs(output_folder, exist_ok=True)
-        data_loader_test = make_data_loader(cfg, cfg.DATASETS.VALID, is_train=False)
-    elif args.mode == "test":
-        output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TEST)
-        os.makedirs(output_folder, exist_ok=True)
-        data_loader_test = make_data_loader(cfg, cfg.DATASETS.TEST, is_train=False)
-    else:
-        raise KeyError("mode not recognized")
+        data_loader_test = make_data_loader(cfg, dataset_name, is_train=False)
 
-    inference(
-        model,
-        data_loader_test,
-        device=cfg.MODEL.DEVICE,
-        output_folder=output_folder
-    )
+        inference(
+            model,
+            data_loader_test,
+            device=cfg.MODEL.DEVICE,
+            output_folder=output_folder
+        )
 
 
 if __name__ == "__main__":

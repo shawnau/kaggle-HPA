@@ -12,3 +12,15 @@ def bninception_protein(num_classes):
                 nn.Linear(1024, num_classes),
             )
     return model
+
+
+def test():
+    import torch
+    model = bninception_protein(28)
+    i = torch.randn((1, 4, 128, 128))
+    o = model(i)
+    print(o.size())
+
+
+if __name__ == '__main__':
+    test()
