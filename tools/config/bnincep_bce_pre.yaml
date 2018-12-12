@@ -1,0 +1,17 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+MODEL:
+  NAME: "bninception"
+  WEIGHT: ""
+
+SOLVER:
+  METHOD: "SGD"
+  MAX_ITER: 40000
+  BASE_LR: 0.03
+  GAMMA: 0.5
+  STEPS: (5000, 10000, 20000, 30000)
+  IMS_PER_BATCH: 120
+
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/bnincep_bce_pre"
