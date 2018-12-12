@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import pandas as pd
 from dl_backbone.config import cfg
 from dl_backbone.data.dataset.mertices import p_r, macro_f1
-from .threshold_optimizer import optimize_th
+from threshold_optimizer import optimize_th
 
 
 def calc_statistics():
@@ -108,12 +108,12 @@ def main():
 
     train_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN, "predictions.pth")
     valid_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID, "predictions.pth")
-    optim_th = optimize_th(train_pth, valid_pth, init_number=0.25, lr=0.01, max_iter=20)
+    optim_th = optimize_th(train_pth, valid_pth, init_number=0.15, lr=0.01, max_iter=20)
     evaluation(cfg.DATASETS.VALID_LABEL, valid_pth,
                thresholds=[0.05 * x for x in list(range(10))],
                optim_th=optim_th)
 
-    submit(cfg, 0.25)
+    submit(cfg, 0.15)
     submit(cfg, optim_th)
     # calc_statistics()
 

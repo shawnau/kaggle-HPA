@@ -43,7 +43,7 @@ def do_train(
         logits = model(images)
         loss = loss_module(logits, targets)
 
-        meters.update(**{str(loss_module): loss})
+        meters.update(**{"loss": loss})
 
         optimizer.zero_grad()
         loss.backward()
@@ -98,6 +98,6 @@ def do_valid(model, valid_data_loader):
         all_logits  = torch.cat(all_logits, dim=0)
         all_targets = torch.cat(all_targets, dim=0)
         bce_loss = F.binary_cross_entropy_with_logits(all_logits.cuda(), all_targets.cuda())
-        f1 = macro_f1(all_logits.cuda(), all_targets.cuda())
+        f1 = macro_f1(all_logits.cuda(), all_targets.cuda(), th=0.15)
     model.train()
-    return {"bce_loss": bce_loss, "f1": f1}
+    return {"val loss": bce_loss, "val f1": f1}

@@ -46,8 +46,7 @@ def train(is_valid=True):
         valid_data_loader = make_data_loader(
             cfg,
             cfg.DATASETS.VALID,
-            is_train=False,
-            start_iter=arguments["iteration"],
+            is_train=False
         )
     else:
         valid_data_loader = None

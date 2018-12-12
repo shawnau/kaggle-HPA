@@ -4,7 +4,7 @@ INPUT:
 
 MODEL:
   NAME: "resnet50"
-  WEIGHT: ""
+  WEIGHT: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/res50_bce_sgd_pre/model_0005000.pth"
 
 SOLVER:
   METHOD: "SGD"
