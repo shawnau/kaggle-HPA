@@ -43,7 +43,7 @@ def main():
     model.to(cfg.MODEL.DEVICE)
 
     checkpointer = DetectronCheckpointer(cfg, model, logger=logger)
-    _ = checkpointer.load(cfg.MODEL.WEIGHT)
+    _ = checkpointer.load(os.path.join(cfg.OUTPUT_DIR, cfg.MODEL.WEIGHT))
 
     for dataset_name in [cfg.DATASETS.TRAIN, cfg.DATASETS.VALID, cfg.DATASETS.TEST]:
         output_folder = os.path.join(cfg.OUTPUT_DIR, "inference", dataset_name)

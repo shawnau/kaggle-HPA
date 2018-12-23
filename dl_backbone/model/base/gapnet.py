@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,9 +28,19 @@ class GapNetPL(nn.Module):
         self.conv7 = nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, bias=False)
         self.bn7 = nn.BatchNorm2d(128)
 
-        self.fc1 = nn.Linear(224, 256)
-        self.fc2 = nn.Linear(256, 256)
-        self.fc3 = nn.Linear(256, num_classes)
+        self.fc = nn.Sequential(OrderedDict([
+            ('bn1', nn.BatchNorm1d(224)),
+            ('drop1', nn.Dropout(p=0.3)),
+            ('linear1', nn.Linear(224, 256)),
+            ('relu1', nn.ReLU()),
+            ('bn2', nn.BatchNorm1d(256)),
+            ('drop2', nn.Dropout(p=0.3)),
+            ('linear2', nn.Linear(256, 256)),
+            ('relu2', nn.ReLU()),
+            ('bn3', nn.BatchNorm1d(256)),
+            ('drop3', nn.Dropout(p=0.3)),
+            ('linear3', nn.Linear(256, num_classes)),
+        ]))
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -56,13 +67,18 @@ class GapNetPL(nn.Module):
         vac_all = torch.cat((vec_a, vec_b, vec_c), dim=1)
         vec_all = vac_all.view(vac_all.size(0), -1)
 
-        out = F.relu(self.fc1(F.dropout(vec_all, p=0.3)))
-        out = F.relu(self.fc1(F.dropout(out, p=0.3)))
-        out = self.fc3(out)
+        out = self.fc(vec_all)
 
         return out
 
 
-if __name__ == "__main__":
+def test():
+    import torch
     model = GapNetPL(28)
+    i = torch.randn((16, 4, 512, 512))
+    o = model(i)
+    print(o.size())
 
+
+if __name__ == '__main__':
+    test()

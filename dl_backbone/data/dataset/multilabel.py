@@ -20,7 +20,10 @@ class ProteinDataset(Dataset):
 
     def __getitem__(self, index):
         img_names = [self.ids[index] + "_" + color + ".png" for color in ["red", "green", "blue", "yellow"]]
-        R, G, B, Y = (cv2.imread(os.path.join(self.root_folder, img_name), cv2.IMREAD_GRAYSCALE) for img_name in img_names)
+        R = cv2.imread(os.path.join(self.root_folder, img_names[0]), cv2.IMREAD_GRAYSCALE)
+        G = cv2.imread(os.path.join(self.root_folder, img_names[1]), cv2.IMREAD_GRAYSCALE)
+        B = cv2.imread(os.path.join(self.root_folder, img_names[2]), cv2.IMREAD_GRAYSCALE)
+        Y = cv2.imread(os.path.join(self.root_folder, img_names[3]), cv2.IMREAD_GRAYSCALE)
         try:
             rgby = np.stack([R, G, B, Y], axis=-1)
             rgby = self.transforms(rgby)

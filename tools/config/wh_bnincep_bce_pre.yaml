@@ -1,0 +1,26 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+DATASETS:
+  TRAIN_ROOT: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/train"
+  TRAIN_LABEL: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/train_split.csv"
+  VALID_ROOT: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/train"
+  VALID_LABEL: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/valid_split.csv"
+  TEST_ROOT: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/test"
+  TEST_LABEL: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/sample_submission.csv"
+
+MODEL:
+  NAME: "bninception"
+  WEIGHT: ""
+
+SOLVER:
+  FINETUNE: "on"
+  TRAIN_EPOCH: 200
+  BASE_LR: 0.0005
+  FINETUNE_EPOCH: 10
+  FINETUNE_LR: 0.03
+  GAMMA: 0.5
+  IMS_PER_BATCH: 120
+
+OUTPUT_DIR: "dump/wh_bnincep_bce_pre"

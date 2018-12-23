@@ -24,21 +24,20 @@ def make_batch_data_sampler(sampler, images_per_batch, num_iters=None, start_ite
     return batch_sampler
 
 
-def make_data_loader(cfg, dataset_name, is_train=True, start_iter=0):
-    if is_train:
-        images_per_gpu = cfg.SOLVER.IMS_PER_BATCH
-        shuffle = True
-        num_iters = cfg.SOLVER.MAX_ITER
-    else:
-        images_per_gpu = cfg.TEST.IMS_PER_BATCH
-        shuffle = False
-        num_iters = None
-        start_iter = 0
-
-    transforms = build_transforms(cfg, is_train)
+def make_data_loader(cfg, dataset_name, is_train=True, start_iter=0, train_epoch=1):
+    transforms = build_transforms(cfg, dataset_name, is_train)
     dataset = build_dataset(cfg, transforms, is_train, dataset_name)
-    sampler = make_data_sampler(dataset, shuffle)
 
+    if is_train:
+        shuffle = True
+        images_per_gpu = cfg.SOLVER.IMS_PER_BATCH
+        num_iters = int(train_epoch * len(dataset) // images_per_gpu)
+    else:
+        shuffle = False
+        images_per_gpu = cfg.TEST.IMS_PER_BATCH
+        num_iters = None
+
+    sampler = make_data_sampler(dataset, shuffle)
     batch_sampler = make_batch_data_sampler(sampler, images_per_gpu, num_iters, start_iter)
     collator = BatchCollator()
     num_workers = cfg.DATALOADER.NUM_WORKERS

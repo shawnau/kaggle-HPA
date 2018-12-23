@@ -3,7 +3,7 @@ INPUT:
   MAX_SIZE_TRAIN: 512
 
 MODEL:
-  NAME: "bninception"
+  NAME: "resnet34"
   WEIGHT: ""
 
 SOLVER:
@@ -13,7 +13,9 @@ SOLVER:
   FINETUNE_EPOCH: 10
   FINETUNE_LR: 0.03
   GAMMA: 0.5
-  PATIENCE: 2500
   IMS_PER_BATCH: 64
 
-OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/bnincep_bce_pre"
+TEST:
+  IMS_PER_BATCH: 64
+
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/res34_bce_pre"

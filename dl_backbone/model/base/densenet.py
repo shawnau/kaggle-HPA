@@ -16,6 +16,9 @@ def test():
     o = model(i)
     print(o.size())
 
+    for key, value in model.named_parameters():
+        print(key)
+
 
 if __name__ == '__main__':
     test()

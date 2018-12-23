@@ -1,5 +1,5 @@
 from torch import nn
-from .base import densenet121_protein, ResNet50Protein, GapNetPL, bninception_protein
+from .base import *
 
 
 class NetWrapper(nn.Module):
@@ -8,6 +8,7 @@ class NetWrapper(nn.Module):
         self.model_name = cfg.MODEL.NAME
         model_list = {
             "resnet50": ResNet50Protein,
+            "resnet34": ResNet34Protein,
             "densenet": densenet121_protein,
             "gapnet-pl": GapNetPL,
             "bninception": bninception_protein

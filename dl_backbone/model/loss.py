@@ -1,3 +1,4 @@
+import torch
 from torch import nn
 import torch.nn.functional as F
 
@@ -19,3 +20,12 @@ class FocalLoss(nn.Module):
 
     def __repr__(self):
         return "focal loss"
+
+
+def make_loss_module(cfg):
+    loss_dict = {
+        "BCE": nn.BCEWithLogitsLoss(),
+        "weighted BCE": nn.BCEWithLogitsLoss(weight=torch.Tensor(cfg.MODEL.LOSS_WEIGHT)),
+        "focal loss": FocalLoss()
+    }
+    return loss_dict[cfg.MODEL.LOSS]

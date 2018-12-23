@@ -6,26 +6,8 @@ import torch
 import torch.nn.functional as F
 import pandas as pd
 from dl_backbone.config import cfg
-from dl_backbone.data.dataset.mertices import p_r, macro_f1
+from dl_backbone.data.dataset.mertices import macro_f1
 from threshold_optimizer import optimize_th
-
-
-def calc_statistics():
-    from dl_backbone.data.build import make_data_loader
-    loader = make_data_loader(cfg, is_train=False)
-    mean = 0.
-    std = 0.
-    nb_samples = 0.
-    for iteration, (images, targets, indices) in enumerate(loader):
-        batch_size = images.size(0)
-        images = images.view(batch_size, images.size(1), -1)
-        mean += images.mean(2).sum(0)
-        std += images.std(2).sum(0)
-        nb_samples += batch_size
-        running_mean = mean / nb_samples
-        running_std = std / nb_samples
-        print("iter %d running mean: " % iteration, running_mean)
-        print("iter %d running std : " % iteration, running_std)
 
 
 def submit(cfg, thresholds):
@@ -65,32 +47,38 @@ def submit(cfg, thresholds):
             header=True, index=False)
 
 
-def evaluation(label_file, eval_file, thresholds, optim_th=None):
-    df_eval = pd.read_csv(label_file)
-    raw_labels = df_eval['Target'].tolist()
-    labels = [list(map(int, item.split(' '))) for item in raw_labels]
+def evaluation(train_csv, train_pth, valid_csv, valid_pth, thresholds, optim_th=None):
+    def load_tensor(csv, pth):
+        df = pd.read_csv(csv)
+        raw_labels = df['Target'].tolist()
+        labels = [list(map(int, item.split(' '))) for item in raw_labels]
 
-    target_tensor = []
-    for label in labels:
-        label_vec = torch.zeros(cfg.MODEL.NUM_CLASS)
-        label_vec[label] = 1
-        target_tensor.append(label_vec)
-    target_tensor = torch.stack(target_tensor, dim=0)
+        target_tensor = []
+        for label in labels:
+            label_vec = torch.zeros(cfg.MODEL.NUM_CLASS)
+            label_vec[label] = 1
+            target_tensor.append(label_vec)
+        target_tensor = torch.stack(target_tensor, dim=0)
 
-    result = torch.load(eval_file)
-    logits = torch.stack(result, dim=0)
-    assert len(logits) == len(target_tensor)
+        result = torch.load(pth)
+        logits = torch.stack(result, dim=0)
+        assert len(logits) == len(target_tensor)
+        return logits, target_tensor
 
+    train_pred, train_tar = load_tensor(train_csv, train_pth)
+    valid_pred, valid_tar = load_tensor(valid_csv, valid_pth)
     for threshold in thresholds:
-        _mf1 = macro_f1(logits, target_tensor, th=threshold)
-        p, r = p_r(logits, target_tensor, th=threshold)
-        print("@%.4f precision: %.4f | recall: %.4f | macro f1: %.4f " % (threshold, p, r, _mf1))
-    print("bce loss: %.4f" % F.binary_cross_entropy_with_logits(logits, target_tensor).item())
+        t_f1 = macro_f1(train_pred, train_tar, th=threshold)
+        v_f1 = macro_f1(valid_pred, valid_tar, th=threshold)
+        print("@%.4f  train f1 %.4f | valid f1: %.4f " % (threshold, t_f1, v_f1))
+    t_loss = F.binary_cross_entropy_with_logits(train_pred, train_tar).item()
+    v_loss = F.binary_cross_entropy_with_logits(valid_pred, valid_tar).item()
+    print("bce loss: train: %.4f | valid: %.4f" % (t_loss, v_loss))
 
     if optim_th is not None:
-        _mf1 = macro_f1(logits, target_tensor, th=optim_th)
-        p, r = p_r(logits, target_tensor, th=optim_th)
-        print("optim precision: %.4f | recall: %.4f | macro f1: %.4f " % (p, r, _mf1))
+        t_f1 = macro_f1(train_pred, train_tar, th=optim_th)
+        v_f1 = macro_f1(valid_pred, valid_tar, th=optim_th)
+        print("optim f1: train: %.4f | valid: %.4f " % (t_f1, v_f1))
 
 
 def main():
@@ -108,14 +96,15 @@ def main():
 
     train_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN, "predictions.pth")
     valid_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID, "predictions.pth")
-    optim_th = optimize_th(train_pth, valid_pth, init_number=0.20, lr=0.01, max_iter=20)
-    evaluation(cfg.DATASETS.VALID_LABEL, valid_pth,
-               thresholds=[0.05 * x for x in list(range(10))],
-               optim_th=optim_th)
+    optim_th = optimize_th(train_pth, valid_pth, init_number=0.05, lr=0.05, max_iter=26)
+    evaluation(
+        cfg.DATASETS.TRAIN_LABEL, train_pth,
+        cfg.DATASETS.VALID_LABEL, valid_pth,
+        thresholds=[0.05 * x for x in list(range(10))],
+        optim_th=optim_th)
 
-    submit(cfg, 0.20)
+    submit(cfg, 0.15)
     submit(cfg, optim_th)
-    # calc_statistics()
 
 
 if __name__ == "__main__":

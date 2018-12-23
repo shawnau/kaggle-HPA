@@ -3,8 +3,8 @@ INPUT:
   MAX_SIZE_TRAIN: 512
 
 MODEL:
-  NAME: "bninception"
-  WEIGHT: ""
+  NAME: "resnet50"
+  WEIGHT: "model_0037500.pth"
 
 SOLVER:
   FINETUNE: "on"
@@ -13,7 +13,9 @@ SOLVER:
   FINETUNE_EPOCH: 10
   FINETUNE_LR: 0.03
   GAMMA: 0.5
-  PATIENCE: 2500
+  IMS_PER_BATCH: 32
+  CHECKPOINT_PERIOD: 2500
+TEST:
   IMS_PER_BATCH: 64
 
-OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/bnincep_bce_pre"
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/res50_bce_pre"

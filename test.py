@@ -3,7 +3,7 @@ import cv2
 from dl_backbone.config import cfg
 
 
-def test_train_loader():
+def test_train_loader(cfg):
     cfg.SOLVER.IMS_PER_BATCH = 10
     from dl_backbone.data.build import make_data_loader
     data_loader = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=False)
@@ -17,7 +17,7 @@ def test_train_loader():
         break
 
 
-def test_test_loader():
+def test_test_loader(cfg):
     cfg.TEST.IMS_PER_BATCH = 10
     from dl_backbone.data.build import make_data_loader
     data_loader = make_data_loader(cfg, cfg.DATASETS.TEST, is_train=False)
@@ -31,7 +31,7 @@ def test_test_loader():
         break
 
 
-def test_lr_scheduler():
+def test_lr_scheduler(cfg):
     from dl_backbone.solver.build import make_optimizer, make_lr_scheduler
     import torch.nn as nn
 
@@ -46,13 +46,29 @@ def test_lr_scheduler():
     model = TestModule()
     optimizer = make_optimizer(cfg, model)
     scheduler = make_lr_scheduler(cfg, optimizer)
-    for i in range(cfg.SOLVER.MAX_ITER):
+    for i in range(10000):
         scheduler.step()
         if ((i < cfg.SOLVER.WARMUP_ITERS) and (i % 100 == 0)) or (i % 1000 == 0):
             print("iter: %d, lr: %.6f" % (i, scheduler.get_lr()[0]))
 
 
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Pytorch Inference")
+    parser.add_argument(
+        "--config-file",
+        default="",
+        metavar="FILE",
+        help="path to config file",
+    )
+
+    args = parser.parse_args()
+    cfg.merge_from_file(args.config_file)
+
+    test_train_loader(cfg)
+    test_test_loader(cfg)
+    test_lr_scheduler(cfg)
+
+
 if __name__ == "__main__":
-    test_train_loader()
-    test_test_loader()
-    #test_lr_scheduler()
+    main()
