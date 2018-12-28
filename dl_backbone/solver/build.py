@@ -17,7 +17,12 @@ def make_optimizer(cfg, model):
             weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
         params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
 
-    optimizer = torch.optim.SGD(params, lr, momentum=cfg.SOLVER.MOMENTUM)
+    if cfg.SOLVER.OPTIMIZER == "sgd":
+        optimizer = torch.optim.SGD(params, lr, momentum=cfg.SOLVER.MOMENTUM)
+    elif cfg.SOLVER.OPTIMIZER == "adam":
+        optimizer = torch.optim.Adam(params, lr)
+    else:
+        raise KeyError("optimizer not supported")
     return optimizer
 
 
@@ -39,19 +44,32 @@ def make_finetune_optimizer(cfg, model):
     return optimizer
 
 
-def _make_lr_scheduler(cfg, optimizer):
-    optimizer_dict = {
-        "SetpLR": WarmupMultiStepLR(
-            optimizer,
-            cfg.SOLVER.STEPS,
-            cfg.SOLVER.GAMMA,
-            warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
-            warmup_iters=cfg.SOLVER.WARMUP_ITERS,
-            warmup_method=cfg.SOLVER.WARMUP_METHOD,
-        ),
-        "ReduceLROnPlateau": ReduceLROnPlateau(
-            optimizer,
-            factor=cfg.SOLVER.GAMMA,
-            patience=cfg.SOLVER.PATIENCE)
-    }
-    return optimizer_dict[cfg.SOLVER.SCHEDULER]
+def make_lr_scheduler(cfg, optimizer):
+    if isinstance(optimizer, torch.optim.SGD):
+        if cfg.SOLVER.SCHEDULER == "ReduceLROnPlateau":
+            return ReduceLROnPlateau(
+                optimizer,
+                factor=cfg.SOLVER.GAMMA,
+                patience=cfg.SOLVER.PATIENCE)
+        elif cfg.SOLVER.SCHEDULER == "SetpLR":
+            return WarmupMultiStepLR(
+                optimizer,
+                cfg.SOLVER.STEPS,
+                cfg.SOLVER.GAMMA,
+                warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+                warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+                warmup_method=cfg.SOLVER.WARMUP_METHOD,
+            )
+    elif isinstance(optimizer, torch.optim.Adam):
+        return None
+
+
+def make_finetune_lr_scheduler(cfg, optimizer):
+    return WarmupMultiStepLR(
+        optimizer,
+        cfg.SOLVER.STEPS,
+        cfg.SOLVER.GAMMA,
+        warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+        warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+        warmup_method=cfg.SOLVER.WARMUP_METHOD,
+    )

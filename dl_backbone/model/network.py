@@ -8,10 +8,16 @@ class NetWrapper(nn.Module):
         self.model_name = cfg.MODEL.NAME
         model_list = {
             "resnet50": ResNet50Protein,
-            "resnet34": ResNet34Protein,
+            "resnet34_maxavg": ResNet34MaxAvgProtein,
+            "resnet34_maxpool": ResNet34MaxProtein,
+            "resnet18_maxavg": ResNet18MaxAvgProtein,
+            "resnet18_maxpool": ResNet18MaxProtein,
+            "resnet343c": ResNet34Protein3C,
             "densenet": densenet121_protein,
             "gapnet-pl": GapNetPL,
-            "bninception": bninception_protein
+            "bninception": bninception_protein,
+            "bninception_maxavg": BNInceptionProtein,
+            "seresnext50": SENeXt50Protein
         }
         self.backbone = model_list[cfg.MODEL.NAME](cfg.MODEL.NUM_CLASS)
 

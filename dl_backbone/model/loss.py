@@ -22,10 +22,36 @@ class FocalLoss(nn.Module):
         return "focal loss"
 
 
+class MacroF1LogitLoss(nn.Module):
+    def __init__(self):
+        super(MacroF1LogitLoss, self).__init__()
+
+    def forward(self, y_pred, y_true):
+        """
+        :param y_pred:  Tensor of shape (B, num_class)
+        :param y_true: Tensor of shape (B, num_class)
+        :return: - macro f1 score
+        """
+        y_pred = y_pred.sigmoid()
+        ep = torch.tensor(1e-7, dtype=torch.double)
+        tp = torch.sum(y_true * y_pred, dim=0)
+        fp = torch.sum((1 - y_true) * y_pred, dim=0)
+        fn = torch.sum(y_true * (1 - y_pred), dim=0)
+
+        p = tp / (tp + fp + ep)
+        r = tp / (tp + fn + ep)
+
+        f1 = 2 * p * r / (p + r + ep)
+        f1 = torch.where(torch.isnan(f1), torch.zeros_like(f1), f1)
+        return 1 - f1.mean()
+
+
 def make_loss_module(cfg):
-    loss_dict = {
-        "BCE": nn.BCEWithLogitsLoss(),
-        "weighted BCE": nn.BCEWithLogitsLoss(weight=torch.Tensor(cfg.MODEL.LOSS_WEIGHT)),
-        "focal loss": FocalLoss()
-    }
-    return loss_dict[cfg.MODEL.LOSS]
+    if cfg.MODEL.LOSS == "BCE":
+        return nn.BCEWithLogitsLoss()
+    elif cfg.MODEL.LOSS == "weighted BCE":
+        return nn.BCEWithLogitsLoss(weight=torch.Tensor(cfg.MODEL.LOSS_WEIGHT))
+    elif cfg.MODEL.LOSS == "focal loss":
+        return FocalLoss()
+    elif cfg.MODEL.LOSS == "macro f1":
+        return MacroF1LogitLoss()

@@ -1,13 +1,20 @@
 import torch
+import pickle
 from .samplers import IterationBasedBatchSampler
 from .transforms import build_transforms
 from .dataset import build_dataset
 from .collate_batch import BatchCollator
 
 
-def make_data_sampler(dataset, shuffle):
+def make_data_sampler(cfg, dataset, shuffle):
     if shuffle:
-        sampler = torch.utils.data.sampler.RandomSampler(dataset)
+        if cfg.DATALOADER.SAMPLER == "weighted":
+            with open(cfg.DATALOADER.SAMPLER_WEIGHTS, 'rb') as f:
+                weights = pickle.load(f)
+            assert len(dataset) == len(weights)
+            sampler = torch.utils.data.WeightedRandomSampler(weights, len(weights))
+        else:
+            sampler = torch.utils.data.sampler.RandomSampler(dataset)
     else:
         sampler = torch.utils.data.sampler.SequentialSampler(dataset)
     return sampler
@@ -37,7 +44,7 @@ def make_data_loader(cfg, dataset_name, is_train=True, start_iter=0, train_epoch
         images_per_gpu = cfg.TEST.IMS_PER_BATCH
         num_iters = None
 
-    sampler = make_data_sampler(dataset, shuffle)
+    sampler = make_data_sampler(cfg, dataset, shuffle)
     batch_sampler = make_batch_data_sampler(sampler, images_per_gpu, num_iters, start_iter)
     collator = BatchCollator()
     num_workers = cfg.DATALOADER.NUM_WORKERS

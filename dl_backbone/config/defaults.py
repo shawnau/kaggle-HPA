@@ -12,8 +12,8 @@ _C.INPUT.MAX_SIZE_TRAIN = 512
 _C.INPUT.MIN_SIZE_TEST = 512
 _C.INPUT.MAX_SIZE_TEST = 512
 
-_C.INPUT.TRAIN_PIXEL_MEAN = [0.0499, 0.0448, 0.0214, 0.0910]
-_C.INPUT.TRAIN_PIXEL_STD =  [0.0744, 0.0689, 0.0545, 0.1326]
+_C.INPUT.TRAIN_PIXEL_MEAN = [0.0874, 0.0518, 0.0514, 0.0793]
+_C.INPUT.TRAIN_PIXEL_STD =  [0.1273, 0.0805, 0.1309, 0.1174]
 
 _C.INPUT.VALID_PIXEL_MEAN = _C.INPUT.TRAIN_PIXEL_MEAN
 _C.INPUT.VALID_PIXEL_STD = _C.INPUT.TRAIN_PIXEL_STD
@@ -42,8 +42,11 @@ _C.DATASETS.TEST_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/sample_sub
 # DataLoader
 # -----------------------------------------------------------------------------
 _C.DATALOADER = CN()
+_C.DATALOADER.SAMPLER = "even"
+_C.DATALOADER.SAMPLER_WEIGHTS = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/sample_weights.pickle"
 # Number of data loading threads
 _C.DATALOADER.NUM_WORKERS = 8
+_C.DATALOADER.AUGMENT = "normal"  # normal, heavy, extreme
 # If > 0, this enforces that each collated batch should have a size divisible
 # by SIZE_DIVISIBILITY
 _C.DATALOADER.SIZE_DIVISIBILITY = 0
@@ -52,17 +55,18 @@ _C.DATALOADER.SIZE_DIVISIBILITY = 0
 # Model config
 # ---------------------------------------------------------------------------- #
 _C.MODEL = CN()
-_C.MODEL.NAME = "resnet"
+_C.MODEL.NAME = "resnet34"
 _C.MODEL.NUM_CLASS = 28
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.WEIGHT = ""
 _C.MODEL.LOSS = "BCE"
-_C.MODEL.LOSS_WEIGHT = None
+_C.MODEL.LOSS_WEIGHT = []
 
 # ---------------------------------------------------------------------------- #
 # Solver
 # ---------------------------------------------------------------------------- #
 _C.SOLVER = CN()
+_C.SOLVER.OPTIMIZER = "sgd"  # sgd, adam
 _C.SOLVER.TRAIN_EPOCH = 50
 _C.SOLVER.BASE_LR = 0.02
 _C.SOLVER.BIAS_LR_FACTOR = 2
@@ -77,6 +81,7 @@ _C.SOLVER.WEIGHT_DECAY = 0.0005
 _C.SOLVER.WEIGHT_DECAY_BIAS = 0
 
 # lr will divide by gamma after each step
+# options: ["ReduceLROnPlateau", "SetpLR", "none"]
 _C.SOLVER.SCHEDULER = "ReduceLROnPlateau"
 # for ReduceLR
 _C.SOLVER.PATIENCE = 2500

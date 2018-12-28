@@ -96,14 +96,14 @@ def main():
 
     train_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.TRAIN, "predictions.pth")
     valid_pth = os.path.join(cfg.OUTPUT_DIR, "inference", cfg.DATASETS.VALID, "predictions.pth")
-    optim_th = optimize_th(train_pth, valid_pth, init_number=0.05, lr=0.05, max_iter=26)
+    optim_th = optimize_th(train_pth, valid_pth, init_number=0.30, lr=0.05, max_iter=14)
     evaluation(
         cfg.DATASETS.TRAIN_LABEL, train_pth,
         cfg.DATASETS.VALID_LABEL, valid_pth,
-        thresholds=[0.05 * x for x in list(range(10))],
+        thresholds=[0.05 * x for x in list(range(15))],
         optim_th=optim_th)
 
-    submit(cfg, 0.15)
+    submit(cfg, 0.10)
     submit(cfg, optim_th)
 
 

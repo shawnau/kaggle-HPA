@@ -62,7 +62,46 @@ def create_class_weight(labels_dict, mu=0.5):
     return class_weight_vec, class_weight_log_vec
 
 
+def create_sample_weight():
+    df = pd.read_csv(cfg.DATASETS.TRAIN_LABEL)
+    label_list = df['Target'].tolist()
+    import pickle
+    import operator
+    from functools import reduce
+    from collections import Counter
+    freq_count = dict(Counter(
+        reduce(operator.add,
+               map(lambda x: list(map(int, x.split(' '))),
+                   label_list
+                   )
+               )
+    ))
+    total = sum(freq_count.values())
+    keys = freq_count.keys()
+    assert sorted(list(keys)) == list(range(len(keys)))
+    class_weight = dict()
+    for key in range(len(keys)):
+        score = total / float(freq_count[key])
+        class_weight[key] = round(score, 2) if score > 1.0 else round(1.0, 2)
+
+    rareness = [x[0] for x in sorted(freq_count.items(), key=operator.itemgetter(1))]
+
+    weights = []
+    sample_labels = list(map(lambda x: list(map(int, x.split(' '))), label_list))
+    for labels in sample_labels:
+        for rare_label in rareness:
+            if rare_label in labels:
+                weights.append(class_weight[rare_label])
+                break
+
+    assert len(weights) == len(label_list)
+    with open(cfg.DATALOADER.SAMPLER_WEIGHTS, 'wb') as f:
+        pickle.dump(weights, f)
+    print("%d weights saved into %s" % (len(label_list), cfg.DATALOADER.SAMPLER_WEIGHTS))
+
+
 def calc_statistics(loader='train'):
+    #cfg.DATASETS.TRAIN_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/HPAv18RBGY_wodpl.csv"
     from dl_backbone.data.build import make_data_loader
     if loader == 'train':
         data_loader = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=True)
@@ -88,4 +127,5 @@ def calc_statistics(loader='train'):
 
 
 if __name__ == "__main__":
-    calc_statistics(loader='test')
+    #create_sample_weight()
+    calc_statistics(loader='train')

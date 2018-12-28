@@ -3,11 +3,10 @@ sys.path.append('../')
 
 import os, argparse, logging
 import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from dl_backbone.config import cfg
 from dl_backbone.data import make_data_loader
-from dl_backbone.solver import make_optimizer, make_finetune_optimizer
+from dl_backbone.solver import make_optimizer, make_finetune_optimizer, make_lr_scheduler, make_finetune_lr_scheduler
 from dl_backbone.model.network import NetWrapper
 from dl_backbone.model.loss import make_loss_module
 from dl_backbone.engine.trainer import do_train
@@ -27,7 +26,7 @@ def train(cfg):
     model = torch.nn.DataParallel(model)
     # define optimizer and scheduler
     optimizer = make_optimizer(cfg, model)
-    scheduler = ReduceLROnPlateau(optimizer, factor=cfg.SOLVER.GAMMA, patience=2500)
+    scheduler = make_lr_scheduler(cfg, optimizer)
     # load checkpoint
     arguments = {"iteration": 0}
     save_to_disk = True  # always true in one machine
@@ -59,7 +58,7 @@ def train(cfg):
 
     if cfg.SOLVER.FINETUNE == "on" and arguments["iteration"] == 0:
         finetune_optimizer = make_finetune_optimizer(cfg, model)
-        finetune_scheduler = ReduceLROnPlateau(finetune_optimizer, factor=cfg.SOLVER.GAMMA, patience=2500)
+        finetune_scheduler = make_finetune_lr_scheduler(cfg, finetune_optimizer)
         finetune_data_loader = make_data_loader(
             cfg,
             cfg.DATASETS.TRAIN,

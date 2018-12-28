@@ -4,6 +4,7 @@ from multiprocessing.pool import Pool
 from tqdm import tqdm
 import requests
 import pandas as pd
+import numpy as np
 from PIL import Image
 
 
@@ -25,7 +26,20 @@ def download(pid, image_list, base_url, save_dir, image_size=(512, 512)):
                 # Use PIL to resize the image and to convert it to L
                 # (8-bit pixels, black and white)
                 im = Image.open(r.raw)
-                im = im.resize(image_size, Image.LANCZOS).convert('L')
+                im = im.resize(image_size, Image.LANCZOS)
+                np_im = np.array(im)
+                if color == 'red':
+                    r_channel = np_im[:, :, 0]
+                    im = Image.fromarray(r_channel.astype(np.uint8))
+                elif color == 'green':
+                    g_channel = np_im[:, :, 1]
+                    im = Image.fromarray(g_channel.astype(np.uint8))
+                elif color == 'blue':
+                    b_channel = np_im[:, :, 2]
+                    im = Image.fromarray(b_channel.astype(np.uint8))
+                elif color == 'red':
+                    y_channel = 0.5*(np_im[:, :, 0]) + 0.5*(np_im[:, :, 1])
+                    im = Image.fromarray(y_channel.astype(np.uint8))
                 im.save(save_path, 'PNG')
 
 
@@ -34,8 +48,8 @@ if __name__ == '__main__':
     process_num = 24
     image_size = (512, 512)
     url = 'http://v18.proteinatlas.org/images/'
-    csv_path =  "./HPAv18RBGY_wodpl.csv"
-    save_dir = "./external_data"
+    csv_path = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/HPAv18RBGY_wodpl.csv"
+    save_dir = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/external_data_fixed"
 
     # Create the directory to save the images in case it doesn't exist
     try:

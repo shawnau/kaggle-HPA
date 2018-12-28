@@ -1,0 +1,25 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+MODEL:
+  NAME: "gapnet-pl"
+  WEIGHT: ""
+  LOSS: "weighted BCE"
+  LOSS_WEIGHT: (1.39, 3.98, 2.72, 3.9, 3.47, 3.32, 3.79, 2.86, 6.63, 6.73, 6.81, 4.32, 4.3, 4.73, 4.12, 7.87, 4.85, 5.91, 4.47, 3.8, 5.93, 2.48, 4.1, 2.77, 5.95, 1.48, 5.45, 7.17)
+
+DATALOADER:
+  NUM_WORKERS: 8
+
+SOLVER:
+  FINETUNE: "off"
+  TRAIN_EPOCH: 100
+  BASE_LR: 0.03
+  PATIENCE: 5000
+  GAMMA: 0.5
+  IMS_PER_BATCH: 64
+
+TEST:
+  IMS_PER_BATCH: 128
+
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/gapnet_wbce"
