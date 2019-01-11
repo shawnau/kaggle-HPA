@@ -1,0 +1,37 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+DATASETS:
+  TRAIN_ROOT: "kaggle/train"
+  TRAIN_LABEL: "kaggle/train_split_0.csv"
+  VALID_ROOT: "kaggle/train"
+  VALID_LABEL: "kaggle/valid_split_0.csv"
+
+MODEL:
+  NAME: "resnet18_maxavg"
+  WEIGHT: ""
+  LOSS: "macro f1"
+
+DATALOADER:
+  SAMPLER_WEIGHTS: "kaggle/train_split_0_weights.pickle"
+  SAMPLER: "weighted"
+  AUGMENT: "heavy"
+
+SOLVER:
+  OPTIMIZER: "sgd"
+  SCHEDULER: "StepLR"
+  STEP_SIZE: 8
+  FINETUNE: "on"
+  TRAIN_EPOCH: 100
+  BASE_LR: 0.04
+  FINETUNE_EPOCH: 3
+  FINETUNE_LR: 0.05
+  GAMMA: 0.5
+  IMS_PER_BATCH: 128
+
+TEST:
+  IMS_PER_BATCH: 64
+  TTA: 'on'
+
+OUTPUT_DIR: "dump/res18_cv0"

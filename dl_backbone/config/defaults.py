@@ -27,23 +27,23 @@ _C.INPUT.TEST_PIXEL_STD =  [0.1037, 0.0798, 0.1066, 0.0988]
 _C.DATASETS = CN()
 
 _C.DATASETS.TRAIN = "train"
-_C.DATASETS.TRAIN_ROOT = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/train"
-_C.DATASETS.TRAIN_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/train_split.csv"
+_C.DATASETS.TRAIN_ROOT = "kaggle/train"
+_C.DATASETS.TRAIN_LABEL = "kaggle/train_split.csv"
 
 _C.DATASETS.VALID = "valid"
 _C.DATASETS.VALID_ROOT = _C.DATASETS.TRAIN_ROOT
-_C.DATASETS.VALID_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/valid_split.csv"
+_C.DATASETS.VALID_LABEL = "kaggle/valid_split.csv"
 
 _C.DATASETS.TEST = "test"
-_C.DATASETS.TEST_ROOT = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/test"
-_C.DATASETS.TEST_LABEL = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/sample_submission.csv"
+_C.DATASETS.TEST_ROOT = "kaggle/test"
+_C.DATASETS.TEST_LABEL = "kaggle/sample_submission.csv"
 
 # -----------------------------------------------------------------------------
 # DataLoader
 # -----------------------------------------------------------------------------
 _C.DATALOADER = CN()
 _C.DATALOADER.SAMPLER = "even"
-_C.DATALOADER.SAMPLER_WEIGHTS = "/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/sample_weights.pickle"
+_C.DATALOADER.SAMPLER_WEIGHTS = "kaggle/sample_weights.pickle"
 # Number of data loading threads
 _C.DATALOADER.NUM_WORKERS = 8
 _C.DATALOADER.AUGMENT = "normal"  # normal, heavy, extreme
@@ -59,6 +59,7 @@ _C.MODEL.NAME = "resnet34"
 _C.MODEL.NUM_CLASS = 28
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.WEIGHT = ""
+# in [BCE, weighted BCE, focal loss, macro f1]
 _C.MODEL.LOSS = "BCE"
 _C.MODEL.LOSS_WEIGHT = [1.00, 3.28, 2.03, 3.19, 2.77, 2.61, 3.08, 2.17, 5.94, 6.01, 6.08, 3.64, 3.62, 4.03, 3.45, 7.15, 4.16, 5.23, 3.77, 3.12, 5.25, 1.80, 3.41, 2.08, 5.23, 1.00, 4.75, 6.44]
 
@@ -116,4 +117,4 @@ _C.TEST.TTA = 'off'
 # ---------------------------------------------------------------------------- #
 # Misc options
 # ---------------------------------------------------------------------------- #
-_C.OUTPUT_DIR = "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/incep_bce_sgd"
+_C.OUTPUT_DIR = "dump/res18_cv0"
