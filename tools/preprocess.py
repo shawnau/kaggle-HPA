@@ -155,7 +155,7 @@ def calc_statistics(loader='train'):
 
 
 if __name__ == "__main__":
-    df_combined = combine_dataset("/unsullied/sharefs/ouxiaoxuan/isilon/kaggle/")
+    df_combined = combine_dataset("kaggle/")
     train_dfs, valid_dfs = train_test_split(df_combined, 4)
     for i in range(4):
         train_df = train_dfs[i]

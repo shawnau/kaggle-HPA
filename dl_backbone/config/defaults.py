@@ -42,7 +42,7 @@ _C.DATASETS.TEST_LABEL = "kaggle/sample_submission.csv"
 # DataLoader
 # -----------------------------------------------------------------------------
 _C.DATALOADER = CN()
-_C.DATALOADER.SAMPLER = "even"
+_C.DATALOADER.SAMPLER = "even" # even or weighted
 _C.DATALOADER.SAMPLER_WEIGHTS = "kaggle/sample_weights.pickle"
 # Number of data loading threads
 _C.DATALOADER.NUM_WORKERS = 8
@@ -55,7 +55,7 @@ _C.DATALOADER.SIZE_DIVISIBILITY = 0
 # Model config
 # ---------------------------------------------------------------------------- #
 _C.MODEL = CN()
-_C.MODEL.NAME = "resnet34"
+_C.MODEL.NAME = "resnet18_maxavg"
 _C.MODEL.NUM_CLASS = 28
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.WEIGHT = ""
