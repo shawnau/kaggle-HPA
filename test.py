@@ -1,3 +1,5 @@
+from tqdm import tqdm
+import numpy as np
 import torch
 import cv2
 from dl_backbone.config import cfg
@@ -52,6 +54,46 @@ def test_lr_scheduler(cfg):
             print("iter: %d, lr: %.6f" % (i, scheduler.get_lr()[0]))
 
 
+def test_weighted_sampler(cfg):
+    cfg.SOLVER.IMS_PER_BATCH = 64
+    from dl_backbone.data.build import make_data_loader
+    data_loader = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=True)
+    count = np.zeros(cfg.MODEL.NUM_CLASS)
+    total_label = 0
+    for iteration, (images, targets, indices) in enumerate(data_loader):
+        for idx in range(len(targets)):
+            target_vec = targets[idx]
+            labels = np.squeeze(torch.nonzero(target_vec).numpy()).tolist()
+            if isinstance(labels, int):
+                labels = [labels]
+            total_label += len(labels)
+            for label in labels:
+                count[label] += 1
+        np.set_printoptions(precision=1)
+        ratio = (count / total_label)*100
+        print(ratio)
+
+
+def test_even_sampler(cfg):
+    cfg.SOLVER.IMS_PER_BATCH = 64
+    cfg.DATALOADER.SAMPLER = "even"
+    from dl_backbone.data.build import make_data_loader
+    data_loader = make_data_loader(cfg, cfg.DATASETS.TRAIN, is_train=True)
+    count = np.zeros(cfg.MODEL.NUM_CLASS)
+    total_label = 0
+    for iteration, (images, targets, indices) in enumerate(data_loader):
+        for idx in range(len(targets)):
+            target_vec = targets[idx]
+            labels = np.squeeze(torch.nonzero(target_vec).numpy()).tolist()
+            if isinstance(labels, int):
+                labels = [labels]
+            total_label += len(labels)
+            for label in labels:
+                count[label] += 1
+        np.set_printoptions(precision=1)
+        ratio = (count / total_label)*100
+        print(ratio)
+
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Pytorch Inference")
@@ -65,9 +107,10 @@ def main():
     args = parser.parse_args()
     cfg.merge_from_file(args.config_file)
 
-    test_train_loader(cfg)
-    test_test_loader(cfg)
-    test_lr_scheduler(cfg)
+    # test_train_loader(cfg)
+    # test_test_loader(cfg)
+    # test_lr_scheduler(cfg)
+    test_even_sampler(cfg)
 
 
 if __name__ == "__main__":

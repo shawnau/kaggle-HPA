@@ -11,16 +11,28 @@ DATASETS:
   TEST_LABEL: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/sample_submission.csv"
 
 MODEL:
-  NAME: "bninception"
-  WEIGHT: ""
+  NAME: "bninception_avg"
+  WEIGHT: "model_minloss.pth"
+  LOSS: "macro f1"
+
+DATALOADER:
+  SAMPLER_WEIGHTS: "/unsullied/sharefs/ouxiaoxuan/ws_root/home/ouxiaoxuan/kaggle/sample_weights.pickle"
+  SAMPLER: "weighted"
+  AUGMENT: "normal"
 
 SOLVER:
+  OPTIMIZER: "sgd"
+  SCHEDULER: "StepLR"
+  STEP_SIZE: 8
+  TRAIN_EPOCH: 100
+  BASE_LR: 0.04
   FINETUNE: "on"
-  TRAIN_EPOCH: 200
-  BASE_LR: 0.0005
-  FINETUNE_EPOCH: 10
-  FINETUNE_LR: 0.03
+  FINETUNE_EPOCH: 3
+  FINETUNE_LR: 0.05
   GAMMA: 0.5
-  IMS_PER_BATCH: 120
+  IMS_PER_BATCH: 128
 
-OUTPUT_DIR: "dump/wh_bnincep_bce_pre"
+TEST:
+  IMS_PER_BATCH: 32
+
+OUTPUT_DIR: "dump/bnincep_0_wh"

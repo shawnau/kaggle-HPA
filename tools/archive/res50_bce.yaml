@@ -1,0 +1,24 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+MODEL:
+  NAME: "resnet50"
+  WEIGHT: ""
+  LOSS: "weighted BCE"
+  LOSS_WEIGHT: (1.0, 3.29, 2.03, 3.21, 2.78, 2.63, 3.1, 2.17, 5.94, 6.04, 6.12, 3.63, 3.61, 4.04, 3.42, 7.18, 4.16, 5.22, 3.77, 3.11, 5.24, 1.79, 3.41, 2.08, 5.26, 1.0, 4.76, 6.48)
+
+SOLVER:
+  FINETUNE: "on"
+  TRAIN_EPOCH: 100
+  BASE_LR: 0.03
+  FINETUNE_EPOCH: 3
+  FINETUNE_LR: 0.03
+  PATIENCE: 5000
+  GAMMA: 0.5
+  IMS_PER_BATCH: 64
+
+TEST:
+  IMS_PER_BATCH: 64
+
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/res50_wbce"

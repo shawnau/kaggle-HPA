@@ -1,9 +1,10 @@
 from .densenet import densenet121_protein
 from .resnet import ResNet18MaxAvgProtein, ResNet50Protein, \
     ResNet34MaxAvgProtein, ResNet34Protein3C, ResNet34MaxProtein, \
-    ResNet18MaxProtein
+    ResNet18MaxProtein, ResNet34MaxAvgNoDropout, ResNet18MaxAvgNoDropout, ResNet18AvgProtein, \
+    ResNet183CProtein
 from .gapnet import GapNetPL
-from .bninception import bninception_protein, BNInceptionProtein
+from .bninception import bninception_avg_protein, bninception_max_protein, BNInceptionProtein
 from .senet import SENeXt50Protein
 
 
@@ -20,6 +21,17 @@ finetune_params = {
                  'conv1_y.weight',
                  'conv1_y.bias'],
             "resnet34_maxavg":
+                ['fc.bn1.weight',
+                 'fc.bn1.bias',
+                 'fc.linear1.weight',
+                 'fc.linear1.bias',
+                 'fc.bn2.weight',
+                 'fc.bn2.bias',
+                 'fc.linear2.weight',
+                 'fc.linear2.bias',
+                 'conv1_y.weight',
+                 'conv1_y.bias'],
+            "resnet34_maxavg_no_dropout":
                 ['fc.bn1.weight',
                  'fc.bn1.bias',
                  'fc.linear1.weight',
@@ -48,7 +60,41 @@ finetune_params = {
                  'fc.linear2.bias',
                  'conv1_y.weight',
                  'conv1_y.bias'],
+            "resnet18_3c":
+                ['fc.bn1.weight',
+                 'fc.bn1.bias',
+                 'fc.linear1.weight',
+                 'fc.linear1.bias',
+                 'fc.bn2.weight',
+                 'fc.bn2.bias',
+                 'fc.linear2.weight',
+                 'fc.linear2.bias'],
+            "resnet18_maxavg_no_dropout":
+                ['fc.bn1.weight',
+                 'fc.bn1.bias',
+                 'fc.linear1.weight',
+                 'fc.linear1.bias',
+                 'fc.bn2.weight',
+                 'fc.bn2.bias',
+                 'fc.linear2.weight',
+                 'fc.linear2.bias',
+                 'conv1_y.weight',
+                 'conv1_y.bias'],
             "resnet18_maxpool":
+                ['fc.bn1.weight',
+                 'fc.bn1.bias',
+                 'fc.linear1.weight',
+                 'fc.linear1.bias',
+                 'conv1_y.weight',
+                 'conv1_y.bias'],
+            "resnet18_avgpool":
+                ['fc.bn1.weight',
+                 'fc.bn1.bias',
+                 'fc.linear1.weight',
+                 'fc.linear1.bias',
+                 'conv1_y.weight',
+                 'conv1_y.bias'],
+            "resnet_optim":
                 ['fc.bn1.weight',
                  'fc.bn1.bias',
                  'fc.linear1.weight',
@@ -68,7 +114,14 @@ finetune_params = {
                 ['features.conv0.weight',
                  'classifier.weight',
                  'classifier.bias'],
-            "bninception":
+            "bninception_avg":
+                ['conv1_7x7_s2.weight',
+                 'conv1_7x7_s2.bias',
+                 'last_linear.bn1.weight',
+                 'last_linear.bn1.bias',
+                 'last_linear.linear1.weight',
+                 'last_linear.linear1.bias'],
+            "bninception_max":
                 ['conv1_7x7_s2.weight',
                  'conv1_7x7_s2.bias',
                  'last_linear.bn1.weight',

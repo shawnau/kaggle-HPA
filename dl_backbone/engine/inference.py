@@ -53,6 +53,7 @@ def inference(
     data_loader,
     device="cuda",
     output_folder=None,
+    output_name="predictions.pth"
 ):
 
     # convert to a torch.device for efficiency
@@ -78,4 +79,4 @@ def inference(
         return
 
     if output_folder:
-        torch.save(predictions, os.path.join(output_folder, "predictions.pth"))
+        torch.save(predictions, os.path.join(output_folder, output_name))

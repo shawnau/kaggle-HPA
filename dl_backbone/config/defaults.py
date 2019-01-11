@@ -60,19 +60,19 @@ _C.MODEL.NUM_CLASS = 28
 _C.MODEL.DEVICE = "cuda"
 _C.MODEL.WEIGHT = ""
 _C.MODEL.LOSS = "BCE"
-_C.MODEL.LOSS_WEIGHT = []
+_C.MODEL.LOSS_WEIGHT = [1.00, 3.28, 2.03, 3.19, 2.77, 2.61, 3.08, 2.17, 5.94, 6.01, 6.08, 3.64, 3.62, 4.03, 3.45, 7.15, 4.16, 5.23, 3.77, 3.12, 5.25, 1.80, 3.41, 2.08, 5.23, 1.00, 4.75, 6.44]
 
 # ---------------------------------------------------------------------------- #
 # Solver
 # ---------------------------------------------------------------------------- #
 _C.SOLVER = CN()
 _C.SOLVER.OPTIMIZER = "sgd"  # sgd, adam
-_C.SOLVER.TRAIN_EPOCH = 50
+_C.SOLVER.TRAIN_EPOCH = 100
 _C.SOLVER.BASE_LR = 0.02
 _C.SOLVER.BIAS_LR_FACTOR = 2
 
 _C.SOLVER.FINETUNE = "off"
-_C.SOLVER.FINETUNE_EPOCH = 1
+_C.SOLVER.FINETUNE_EPOCH = 3
 _C.SOLVER.FINETUNE_LR = 0.002
 
 _C.SOLVER.MOMENTUM = 0.9
@@ -81,18 +81,20 @@ _C.SOLVER.WEIGHT_DECAY = 0.0005
 _C.SOLVER.WEIGHT_DECAY_BIAS = 0
 
 # lr will divide by gamma after each step
-# options: ["ReduceLROnPlateau", "SetpLR", "none"]
+# options: ["ReduceLROnPlateau", "MultiSetpLR", "StepLR", "CosineAnnealingLR"]
 _C.SOLVER.SCHEDULER = "ReduceLROnPlateau"
 # for ReduceLR
-_C.SOLVER.PATIENCE = 2500
+_C.SOLVER.PATIENCE = 10
 _C.SOLVER.GAMMA = 0.5
+# for MultiSetpLR
+_C.SOLVER.STEPS = (10, 20, 30, 40, 50, 60, 70, 80, 90)
 # for SetpLR
-_C.SOLVER.STEPS = (15000, 20000, 25000, 35000, 45000)
-_C.SOLVER.WARMUP_FACTOR = 1.0 / 3
-_C.SOLVER.WARMUP_ITERS = 500
-_C.SOLVER.WARMUP_METHOD = "linear"
+_C.SOLVER.STEP_SIZE = 10
+# for CosineAnnealingLR
+_C.SOLVER.T_MAX = 10
 
-_C.SOLVER.CHECKPOINT_PERIOD = 5000
+_C.SOLVER.CHECKPOINT_PERIOD = 10
+_C.SOLVER.MIXUP = 'off'
 
 # Number of images per batch
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
@@ -109,6 +111,7 @@ _C.TEST.EXPECTED_RESULTS_SIGMA_TOL = 4
 # This is global, so if we have 8 GPUs and IMS_PER_BATCH = 16, each GPU will
 # see 2 images per batch
 _C.TEST.IMS_PER_BATCH = 32
+_C.TEST.TTA = 'off'
 
 # ---------------------------------------------------------------------------- #
 # Misc options

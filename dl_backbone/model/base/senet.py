@@ -16,7 +16,7 @@ class SENeXt50Protein(SENet):
         settings = pretrained_settings['se_resnext50_32x4d']['imagenet']
         self.load_state_dict(model_zoo.load_url(settings['url']))
 
-        self.layer0[0] = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.layer0[0] = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.max_pool = nn.AdaptiveMaxPool2d(1)
         self.last_linear = nn.Sequential(OrderedDict([

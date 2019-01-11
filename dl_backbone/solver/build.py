@@ -1,6 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved.
 import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, MultiStepLR, CosineAnnealingLR
 from .lr_scheduler import WarmupMultiStepLR
 from dl_backbone.model.base import finetune_params
 
@@ -51,25 +51,25 @@ def make_lr_scheduler(cfg, optimizer):
                 optimizer,
                 factor=cfg.SOLVER.GAMMA,
                 patience=cfg.SOLVER.PATIENCE)
-        elif cfg.SOLVER.SCHEDULER == "SetpLR":
-            return WarmupMultiStepLR(
+        elif cfg.SOLVER.SCHEDULER == "MultiStepLR":
+            return MultiStepLR(
                 optimizer,
-                cfg.SOLVER.STEPS,
-                cfg.SOLVER.GAMMA,
-                warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
-                warmup_iters=cfg.SOLVER.WARMUP_ITERS,
-                warmup_method=cfg.SOLVER.WARMUP_METHOD,
+                milestones=cfg.SOLVER.STEPS,
+                gamma=cfg.SOLVER.GAMMA
             )
+        elif cfg.SOLVER.SCHEDULER == "StepLR":
+            return StepLR(
+                optimizer,
+                step_size=cfg.SOLVER.STEP_SIZE,
+                gamma=cfg.SOLVER.GAMMA
+            )
+        elif cfg.SOLVER.SCHEDULER == "CosineAnnealingLR":
+            return CosineAnnealingLR(
+                optimizer,
+                T_max=cfg.SOLVER.T_MAX,
+                eta_min=1e-5
+            )
+        else:
+            raise KeyError("LR Scheduler %s not recognized!"%cfg.SOLVER.SCHEDULER)
     elif isinstance(optimizer, torch.optim.Adam):
         return None
-
-
-def make_finetune_lr_scheduler(cfg, optimizer):
-    return WarmupMultiStepLR(
-        optimizer,
-        cfg.SOLVER.STEPS,
-        cfg.SOLVER.GAMMA,
-        warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
-        warmup_iters=cfg.SOLVER.WARMUP_ITERS,
-        warmup_method=cfg.SOLVER.WARMUP_METHOD,
-    )

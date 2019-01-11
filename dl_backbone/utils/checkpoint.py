@@ -16,7 +16,7 @@ class Checkpointer(object):
         save_dir="",
         save_to_disk=None,
         logger=None,
-        overwrite=False
+        overwrite_epoch=False
     ):
         self.model = model
         self.optimizer = optimizer
@@ -26,7 +26,7 @@ class Checkpointer(object):
         if logger is None:
             logger = logging.getLogger(__name__)
         self.logger = logger
-        self.overwrite = overwrite  # use config to overwrite checkpoint
+        self.overwrite_epoch = overwrite_epoch  # use config to overwrite checkpoint
 
     def save(self, name, **kwargs):
         if not self.save_dir:
@@ -67,11 +67,14 @@ class Checkpointer(object):
                 pass
         if "scheduler" in checkpoint and self.scheduler:
             self.logger.info("Loading scheduler from {}".format(f))
-            if self.overwrite:
-                self.scheduler.last_epoch = checkpoint["iteration"]
+            if self.overwrite_epoch:
+                self.scheduler.last_epoch = checkpoint["epoch"]
                 checkpoint.pop("scheduler")
             else:
-                self.scheduler.load_state_dict(checkpoint.pop("scheduler"))
+                try:
+                    self.scheduler.load_state_dict(checkpoint.pop("scheduler"))
+                except Exception:
+                    pass
         # return any further checkpoint data
         return checkpoint
 
@@ -112,7 +115,7 @@ class DetectronCheckpointer(Checkpointer):
         save_dir="",
         save_to_disk=None,
         logger=None,
-        overwrite=False
+        overwrite_epoch=False
     ):
         super(DetectronCheckpointer, self).__init__(
             model,
@@ -121,7 +124,7 @@ class DetectronCheckpointer(Checkpointer):
             save_dir,
             save_to_disk,
             logger,
-            overwrite
+            overwrite_epoch
         )
         self.cfg = cfg.clone()
 

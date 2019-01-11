@@ -6,7 +6,7 @@ import torch
 
 from dl_backbone.config import cfg
 from dl_backbone.data import make_data_loader
-from dl_backbone.solver import make_optimizer, make_finetune_optimizer, make_lr_scheduler, make_finetune_lr_scheduler
+from dl_backbone.solver import make_optimizer, make_finetune_optimizer, make_lr_scheduler
 from dl_backbone.model.network import NetWrapper
 from dl_backbone.model.loss import make_loss_module
 from dl_backbone.engine.trainer import do_train
@@ -28,7 +28,7 @@ def train(cfg):
     optimizer = make_optimizer(cfg, model)
     scheduler = make_lr_scheduler(cfg, optimizer)
     # load checkpoint
-    arguments = {"iteration": 0}
+    arguments = {"epoch": 0}
     save_to_disk = True  # always true in one machine
     checkpointer = DetectronCheckpointer(
         cfg,
@@ -37,8 +37,7 @@ def train(cfg):
         scheduler,
         cfg.OUTPUT_DIR,
         save_to_disk,
-        logger,
-        overwrite=True
+        logger
     )
     extra_checkpoint_data = checkpointer.load(cfg.MODEL.WEIGHT)
     arguments.update(extra_checkpoint_data)
@@ -46,9 +45,7 @@ def train(cfg):
     train_data_loader = make_data_loader(
         cfg,
         cfg.DATASETS.TRAIN,
-        is_train=True,
-        start_iter=arguments["iteration"],
-        train_epoch=cfg.SOLVER.TRAIN_EPOCH
+        is_train=True
     )
     valid_data_loader = make_data_loader(
         cfg,
@@ -56,40 +53,41 @@ def train(cfg):
         is_train=False
     )
 
-    if cfg.SOLVER.FINETUNE == "on" and arguments["iteration"] == 0:
+    if cfg.SOLVER.FINETUNE == "on" and arguments["epoch"] == 0:
         finetune_optimizer = make_finetune_optimizer(cfg, model)
-        finetune_scheduler = make_finetune_lr_scheduler(cfg, finetune_optimizer)
         finetune_data_loader = make_data_loader(
             cfg,
             cfg.DATASETS.TRAIN,
-            is_train=True,
-            start_iter=arguments["iteration"],
-            train_epoch=cfg.SOLVER.FINETUNE_EPOCH
+            is_train=True
         )
         do_train(
-            model,
-            loss_module,
-            finetune_data_loader,
-            valid_data_loader,
-            finetune_optimizer,
-            finetune_scheduler,
-            checkpointer,
-            device,
-            cfg.SOLVER.CHECKPOINT_PERIOD,
-            arguments
+            model=model,
+            loss_module=loss_module,
+            train_data_loader=finetune_data_loader,
+            valid_data_loader=valid_data_loader,
+            optimizer=finetune_optimizer,
+            scheduler=None,
+            checkpointer=checkpointer,
+            device=device,
+            train_epoch=cfg.SOLVER.FINETUNE_EPOCH,
+            checkpoint_period=cfg.SOLVER.CHECKPOINT_PERIOD,
+            is_mixup=cfg.SOLVER.MIXUP,
+            arguments=arguments
         )
 
     do_train(
-        model,
-        loss_module,
-        train_data_loader,
-        valid_data_loader,
-        optimizer,
-        scheduler,
-        checkpointer,
-        device,
-        cfg.SOLVER.CHECKPOINT_PERIOD,
-        arguments
+        model=model,
+        loss_module=loss_module,
+        train_data_loader=train_data_loader,
+        valid_data_loader=valid_data_loader,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        checkpointer=checkpointer,
+        device=device,
+        train_epoch=cfg.SOLVER.TRAIN_EPOCH,
+        checkpoint_period=cfg.SOLVER.CHECKPOINT_PERIOD,
+        is_mixup=cfg.SOLVER.MIXUP,
+        arguments=arguments
     )
 
 

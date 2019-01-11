@@ -1,0 +1,26 @@
+INPUT:
+  MIN_SIZE_TRAIN: 512
+  MAX_SIZE_TRAIN: 512
+
+MODEL:
+  NAME: "gapnet-pl"
+  WEIGHT: ""
+  LOSS: "macro f1"
+
+DATALOADER:
+  SAMPLER: "weighted"
+
+SOLVER:
+  OPTIMIZER: "sgd"
+  SCHEDULER: "ReduceLROnPlateau"
+  FINETUNE: "off"
+  TRAIN_EPOCH: 100
+  BASE_LR: 0.03
+  PATIENCE: 5000
+  GAMMA: 0.5
+  IMS_PER_BATCH: 64
+
+TEST:
+  IMS_PER_BATCH: 128
+
+OUTPUT_DIR: "/unsullied/sharefs/ouxiaoxuan/isilon/dl_backbone/tools/dump/gapnet_0"

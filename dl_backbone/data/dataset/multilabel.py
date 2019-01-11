@@ -17,7 +17,7 @@ class ProteinDataset(Dataset):
         self.num_classes = cfg.MODEL.NUM_CLASS
         self.root_folder = root_folder
         self.transforms = transforms
-        if cfg.MODEL.NAME in ['resnet343c']:
+        if cfg.MODEL.NAME in ['resnet343c', 'resnet18_3c']:
             self.channels = 3
         else:
             self.channels = 4
