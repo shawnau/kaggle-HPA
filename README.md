@@ -6,7 +6,9 @@ requirements:
  - [yacs](https://github.com/rbgirshick/yacs)
  - python-opencv
  - [imgaug 0.2.7](https://github.com/aleju/imgaug/releases)
+ - [pretrainedmodels](https://github.com/Cadene/pretrained-models.pytorch)
 
+unzip data.zip under `tools/kaggle`, download and put train/test pictures in `tools/kaggle/train` and `tools/kaggle/test`
 ### Dataset Preprocessing
 
 See `tools/preprocessing.py`.
