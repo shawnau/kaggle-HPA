@@ -1,5 +1,5 @@
 ## Human Protein Atlas Image Classification
-75th solution for kaggle [Human Protein Atlas Image Classification](https://www.kaggle.com/c/human-protein-atlas-image-classification) by pytorch 1.0
+73th solution for kaggle [Human Protein Atlas Image Classification](https://www.kaggle.com/c/human-protein-atlas-image-classification) by pytorch 1.0
 
 requirements: 
  - pytorch 1.0
